@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Link } from 'react-router-dom';
 import { Search, Plus, ChevronRight, Trash2 } from 'lucide-react';
@@ -31,6 +31,25 @@ export function ExerciseLibrary() {
     for (const ex of exercises) if (!seen.includes(ex.category)) seen.push(ex.category);
     return seen;
   }, [exercises]);
+
+  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
+  const categoriesInitialized = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (categoriesInitialized.current !== activeRoutineId && allCategories.length > 0) {
+      categoriesInitialized.current = activeRoutineId;
+      setCollapsedCategories(new Set(allCategories));
+    }
+  }, [allCategories, activeRoutineId]);
+
+  function toggleCategory(category: string) {
+    setCollapsedCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(category)) next.delete(category);
+      else next.add(category);
+      return next;
+    });
+  }
 
   const grouped = useMemo(() => {
     if (!exercises) return [];
@@ -108,9 +127,17 @@ export function ExerciseLibrary() {
         {grouped.length === 0 ? (
           <EmptyState title="No exercises found" />
         ) : (
-          grouped.map(({ category, items }) => (
+          grouped.map(({ category, items }) => {
+            const isCollapsed = !query.trim() && collapsedCategories.has(category);
+            return (
             <div key={category}>
-              <CategoryHeader category={category} />
+              <CategoryHeader
+                category={category}
+                count={items.length}
+                collapsed={isCollapsed}
+                onToggle={() => toggleCategory(category)}
+              />
+              {!isCollapsed && (
               <div className="flex flex-col gap-1.5">
                 {items.map((ex) => (
                   <div
@@ -137,8 +164,10 @@ export function ExerciseLibrary() {
                   </div>
                 ))}
               </div>
+              )}
             </div>
-          ))
+            );
+          })
         )}
       </div>
 

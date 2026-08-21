@@ -30,7 +30,7 @@ function App() {
 
   return (
     <>
-      <main className="flex-1 overflow-y-auto pb-6">
+      <main className="safe-top flex-1 overflow-y-auto pb-6">
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/train" element={<StartWorkout />} />

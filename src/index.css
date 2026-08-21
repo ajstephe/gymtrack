@@ -80,3 +80,7 @@ input[type="number"] {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+.safe-top {
+  padding-top: env(safe-area-inset-top);
+}

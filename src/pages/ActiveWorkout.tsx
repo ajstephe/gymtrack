@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { ChevronDown, Trash2, Check, X, Flame, Plus, Scale } from 'lucide-react';
@@ -54,6 +54,8 @@ export function ActiveWorkout() {
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
   const [showAddExercise, setShowAddExercise] = useState(false);
   const [newExForm, setNewExForm] = useState({ name: '', category: '', unit: 'kg' as WeightUnit, setupNote: '' });
+  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
+  const categoriesInitialized = useRef(false);
 
   useEffect(() => {
     if (!session || session.endedAt) return;
@@ -76,6 +78,22 @@ export function ActiveWorkout() {
     }
     return order.map((cat) => ({ category: cat, exercises: map.get(cat)! }));
   }, [exercises]);
+
+  useEffect(() => {
+    if (!categoriesInitialized.current && categories.length > 0) {
+      categoriesInitialized.current = true;
+      setCollapsedCategories(new Set(categories.map((c) => c.category)));
+    }
+  }, [categories]);
+
+  function toggleCategory(category: string) {
+    setCollapsedCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(category)) next.delete(category);
+      else next.add(category);
+      return next;
+    });
+  }
 
   const setsByExercise = useMemo(() => {
     const map = new Map<string, SetEntry[]>();
@@ -150,11 +168,12 @@ export function ActiveWorkout() {
     if (!newExForm.name.trim() || !session) return;
     const count = await db.exercises.where('routineId').equals(session.routineId).count();
     const createdId = newId('ex');
+    const createdCategory = newExForm.category.trim() || 'Other';
     await db.exercises.add({
       id: createdId,
       routineId: session.routineId,
       name: newExForm.name.trim(),
-      category: newExForm.category.trim() || 'Other',
+      category: createdCategory,
       unit: newExForm.unit,
       weightType: null,
       setupNote: newExForm.setupNote.trim() || undefined,
@@ -164,6 +183,11 @@ export function ActiveWorkout() {
     setNewExForm({ name: '', category: '', unit: 'kg', setupNote: '' });
     setShowAddExercise(false);
     setExpandedId(createdId);
+    setCollapsedCategories((prev) => {
+      const next = new Set(prev);
+      next.delete(createdCategory);
+      return next;
+    });
     setTimeout(() => {
       document.getElementById(`ex-${createdId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }, 100);
@@ -215,7 +239,13 @@ export function ActiveWorkout() {
       <div className="flex flex-col gap-5 pb-24">
         {categories.map(({ category, exercises: exList }) => (
           <div key={category}>
-            <CategoryHeader category={category} />
+            <CategoryHeader
+              category={category}
+              count={exList.length}
+              collapsed={collapsedCategories.has(category)}
+              onToggle={() => toggleCategory(category)}
+            />
+            {!collapsedCategories.has(category) && (
             <div className="flex flex-col gap-2">
               {exList.map((ex) => {
                 const logged = setsByExercise.get(ex.id) ?? [];
@@ -454,6 +484,7 @@ export function ActiveWorkout() {
                 );
               })}
             </div>
+            )}
           </div>
         ))}
       </div>

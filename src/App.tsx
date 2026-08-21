@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { ensureSeeded } from './data/db';
+import { requestPersistentStorage } from './lib/storagePersistence';
 import { TabBar } from './components/TabBar';
 import { RestTimer } from './components/RestTimer';
 import { Dashboard } from './pages/Dashboard';
@@ -10,6 +11,7 @@ import { History } from './pages/History';
 import { SessionDetail } from './pages/SessionDetail';
 import { ExerciseLibrary } from './pages/ExerciseLibrary';
 import { ExerciseDetail } from './pages/ExerciseDetail';
+import { Settings } from './pages/Settings';
 
 function App() {
   const [ready, setReady] = useState(false);
@@ -18,6 +20,7 @@ function App() {
 
   useEffect(() => {
     ensureSeeded().then(() => setReady(true));
+    requestPersistentStorage();
   }, []);
 
   if (!ready) {
@@ -39,6 +42,7 @@ function App() {
           <Route path="/history/:sessionId" element={<SessionDetail />} />
           <Route path="/exercises" element={<ExerciseLibrary />} />
           <Route path="/exercises/:exerciseId" element={<ExerciseDetail />} />
+          <Route path="/settings" element={<Settings />} />
         </Routes>
       </main>
       <RestTimer />

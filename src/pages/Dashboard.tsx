@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Link } from 'react-router-dom';
-import { Flame, TrendingUp, CalendarCheck, Trophy, ChevronRight, Play, Plus, Scale } from 'lucide-react';
+import { Flame, TrendingUp, CalendarCheck, Trophy, ChevronRight, Play, Plus, Scale, Settings as SettingsIcon } from 'lucide-react';
 import { BarChart, Bar, LineChart, Line, ResponsiveContainer, XAxis, Tooltip } from 'recharts';
 import { db } from '../data/db';
 import { useSessionStore } from '../store/sessionStore';
@@ -56,6 +56,13 @@ export function Dashboard() {
             Your <span className="accent-text">Progress</span>
           </h1>
         </div>
+        <Link
+          to="/settings"
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-surface)] text-[var(--color-text-dim)]"
+          aria-label="Settings"
+        >
+          <SettingsIcon size={17} />
+        </Link>
       </div>
 
       {activeSession ? (

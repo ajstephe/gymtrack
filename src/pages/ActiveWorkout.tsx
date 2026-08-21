@@ -304,6 +304,44 @@ export function ActiveWorkout() {
                           </span>
                         </div>
 
+                        {last && last.length > 0 && (
+                          <div className="mb-3">
+                            <div className="mb-1.5 text-[10px] uppercase tracking-wide text-[var(--color-text-faint)]">
+                              Last time ·{' '}
+                              {new Date(last[0].completedAt).toLocaleDateString(undefined, {
+                                month: 'short',
+                                day: 'numeric',
+                              })}
+                            </div>
+                            <div className="flex flex-wrap gap-1.5">
+                              {(() => {
+                                let workingIndex = 0;
+                                return last.map((s) => {
+                                  if (!s.isWarmup) workingIndex++;
+                                  return (
+                                    <span
+                                      key={s.id}
+                                      className="rounded-lg bg-[var(--color-surface-2)] px-2.5 py-1 text-xs font-medium tabular-nums"
+                                    >
+                                      {s.isWarmup ? (
+                                        <span className="text-[var(--color-amber)]">W</span>
+                                      ) : (
+                                        workingIndex
+                                      )}
+                                      . {formatWeight(s.weight, s.unit)} × {s.reps}
+                                      {s.rpe != null && (
+                                        <span className="ml-1 font-normal text-[var(--color-text-faint)]">
+                                          RPE {trimNum(s.rpe)}
+                                        </span>
+                                      )}
+                                    </span>
+                                  );
+                                });
+                              })()}
+                            </div>
+                          </div>
+                        )}
+
                         {suggestion && (
                           <button
                             type="button"

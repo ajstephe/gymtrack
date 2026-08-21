@@ -46,6 +46,14 @@ export interface ExercisePhoto {
   updatedAt: string;
 }
 
+export interface BodyWeightEntry {
+  id: string;
+  weight: number;
+  unit: 'kg' | 'lb';
+  date: string;
+  sessionId?: string;
+}
+
 export interface SetEntry {
   id: string;
   sessionId: string;

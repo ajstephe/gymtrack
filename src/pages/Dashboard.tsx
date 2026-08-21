@@ -1,20 +1,24 @@
+import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Link } from 'react-router-dom';
-import { Flame, TrendingUp, CalendarCheck, Trophy, ChevronRight, Play } from 'lucide-react';
-import { BarChart, Bar, ResponsiveContainer, XAxis, Tooltip } from 'recharts';
+import { Flame, TrendingUp, CalendarCheck, Trophy, ChevronRight, Play, Plus, Scale } from 'lucide-react';
+import { BarChart, Bar, LineChart, Line, ResponsiveContainer, XAxis, Tooltip } from 'recharts';
 import { db } from '../data/db';
 import { useSessionStore } from '../store/sessionStore';
 import { StatCard } from '../components/StatCard';
 import { EmptyState } from '../components/EmptyState';
+import { LogBodyWeightSheet } from '../components/LogBodyWeightSheet';
 import { currentStreak, weeklyVolumeSeries, recentPRs, workingSets } from '../lib/calculations';
-import { formatVolume, formatWeight } from '../lib/format';
+import { formatVolume, formatWeight, trimNum } from '../lib/format';
 import { startOfMonth } from 'date-fns';
 
 export function Dashboard() {
   const sessions = useLiveQuery(() => db.sessions.toArray(), []) ?? [];
   const sets = useLiveQuery(() => db.sets.toArray(), []) ?? [];
   const exercises = useLiveQuery(() => db.exercises.toArray(), []) ?? [];
+  const bodyWeights = useLiveQuery(() => db.bodyWeights.toArray(), []) ?? [];
   const activeSessionId = useSessionStore((s) => s.activeSessionId);
+  const [showBodyWeight, setShowBodyWeight] = useState(false);
 
   const finishedSessions = sessions.filter((s) => s.endedAt);
   const activeSession = sessions.find((s) => s.id === activeSessionId && !s.endedAt);
@@ -31,6 +35,15 @@ export function Dashboard() {
 
   const prs = recentPRs(working, 7).slice(0, 5);
   const exerciseById = new Map(exercises.map((e) => [e.id, e]));
+
+  const sortedBW = [...bodyWeights].sort((a, b) => a.date.localeCompare(b.date));
+  const latestBW = sortedBW[sortedBW.length - 1];
+  const prevBW = sortedBW[sortedBW.length - 2];
+  const bwDelta = latestBW && prevBW ? latestBW.weight - prevBW.weight : null;
+  const bwChartData = sortedBW.slice(-10).map((e) => ({
+    date: new Date(e.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+    weight: e.weight,
+  }));
 
   return (
     <div className="px-4 pt-6">
@@ -129,6 +142,72 @@ export function Dashboard() {
         )}
       </div>
 
+      <div className="mb-5 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+        <div className="mb-2 flex items-center justify-between">
+          <h2 className="flex items-center gap-1.5 text-sm font-semibold text-[var(--color-text-dim)]">
+            <Scale size={14} />
+            Body Weight
+          </h2>
+          <button
+            onClick={() => setShowBodyWeight(true)}
+            className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--color-surface-2)]"
+            aria-label="Log body weight"
+          >
+            <Plus size={14} />
+          </button>
+        </div>
+        {!latestBW ? (
+          <div className="flex h-20 items-center justify-center text-sm text-[var(--color-text-faint)]">
+            Log your weight to start tracking
+          </div>
+        ) : (
+          <>
+            <div className="mb-1 flex items-baseline gap-2">
+              <span className="text-2xl font-bold tabular-nums">
+                {trimNum(latestBW.weight)}
+                {latestBW.unit}
+              </span>
+              {bwDelta != null && (
+                <span className="text-xs font-medium text-[var(--color-text-faint)]">
+                  {bwDelta > 0 ? '+' : ''}
+                  {trimNum(Math.round(bwDelta * 10) / 10)}
+                  {latestBW.unit} vs last
+                </span>
+              )}
+            </div>
+            {bwChartData.length > 1 && (
+              <ResponsiveContainer width="100%" height={100}>
+                <LineChart data={bwChartData} margin={{ top: 4, right: 4, left: 4, bottom: 0 }}>
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fill: 'var(--color-text-faint)', fontSize: 10 }}
+                    axisLine={false}
+                    tickLine={false}
+                    interval="preserveStartEnd"
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      background: 'var(--color-surface-2)',
+                      border: '1px solid var(--color-border)',
+                      borderRadius: 8,
+                      fontSize: 12,
+                    }}
+                    formatter={(v) => [`${trimNum(Number(v))} ${latestBW.unit}`, 'Weight']}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="weight"
+                    stroke="var(--color-primary)"
+                    strokeWidth={2}
+                    dot={{ r: 2.5, fill: 'var(--color-primary)' }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
+          </>
+        )}
+      </div>
+
       <div className="mb-4">
         <h2 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-[var(--color-text-dim)]">
           <Trophy size={15} className="text-[var(--color-amber)]" />
@@ -161,6 +240,10 @@ export function Dashboard() {
           </div>
         )}
       </div>
+
+      {showBodyWeight && (
+        <LogBodyWeightSheet defaultUnit={latestBW?.unit ?? 'kg'} onClose={() => setShowBodyWeight(false)} />
+      )}
     </div>
   );
 }

@@ -7,6 +7,7 @@ import type { Exercise, WeightUnit } from '../data/types';
 import { EmptyState } from '../components/EmptyState';
 import { ExercisePhotoThumb } from '../components/ExercisePhoto';
 import { CategoryHeader } from '../components/CategoryHeader';
+import { CategorySelect } from '../components/CategorySelect';
 import { UNIT_OPTIONS } from '../lib/unitOptions';
 
 export function ExerciseLibrary() {
@@ -23,6 +24,13 @@ export function ExerciseLibrary() {
   const [query, setQuery] = useState('');
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({ name: '', category: '', unit: 'kg' as WeightUnit, setupNote: '' });
+
+  const allCategories = useMemo(() => {
+    if (!exercises) return [];
+    const seen: string[] = [];
+    for (const ex of exercises) if (!seen.includes(ex.category)) seen.push(ex.category);
+    return seen;
+  }, [exercises]);
 
   const grouped = useMemo(() => {
     if (!exercises) return [];
@@ -145,11 +153,10 @@ export function ExerciseLibrary() {
                 placeholder="Exercise name"
                 className="rounded-lg bg-[var(--color-surface-2)] px-3 py-2 text-sm outline-none"
               />
-              <input
+              <CategorySelect
+                categories={allCategories}
                 value={form.category}
-                onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
-                placeholder="Category (e.g. Chest)"
-                className="rounded-lg bg-[var(--color-surface-2)] px-3 py-2 text-sm outline-none"
+                onChange={(category) => setForm((f) => ({ ...f, category }))}
               />
               <input
                 value={form.setupNote}
@@ -185,7 +192,10 @@ export function ExerciseLibrary() {
             </div>
           ) : (
             <button
-              onClick={() => setShowAdd(true)}
+              onClick={() => {
+                setForm((f) => ({ ...f, category: allCategories[0] ?? '' }));
+                setShowAdd(true);
+              }}
               className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-[var(--color-border)] px-4 py-3.5 text-sm text-[var(--color-text-dim)]"
             >
               <Plus size={16} /> Add exercise to this gym

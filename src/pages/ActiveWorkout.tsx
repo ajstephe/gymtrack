@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { ChevronDown, Trash2, Check, X, Flame, Plus } from 'lucide-react';
+import { ChevronDown, Trash2, Check, X, Flame, Plus, Scale } from 'lucide-react';
 import { db, newId } from '../data/db';
 import { useSessionStore } from '../store/sessionStore';
 import { useRestTimerStore } from '../store/restTimerStore';
@@ -10,6 +10,8 @@ import { workingSets, suggestNextTarget } from '../lib/calculations';
 import { UNIT_OPTIONS } from '../lib/unitOptions';
 import { ExercisePhotoThumb, ExercisePhotoButton } from '../components/ExercisePhoto';
 import { CategoryHeader } from '../components/CategoryHeader';
+import { CategorySelect } from '../components/CategorySelect';
+import { LogBodyWeightSheet } from '../components/LogBodyWeightSheet';
 import type { Exercise, SetEntry, WeightUnit } from '../data/types';
 
 const REST_PRESETS = [60, 90, 120, 180];
@@ -43,10 +45,12 @@ export function ActiveWorkout() {
     [sessionId]
   );
   const allSets = useLiveQuery(() => db.sets.toArray(), []);
+  const lastBodyWeight = useLiveQuery(() => db.bodyWeights.orderBy('date').last(), []);
 
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const [restDuration, setRestDuration] = useState(90);
+  const [showBodyWeight, setShowBodyWeight] = useState(false);
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
   const [showAddExercise, setShowAddExercise] = useState(false);
   const [newExForm, setNewExForm] = useState({ name: '', category: '', unit: 'kg' as WeightUnit, setupNote: '' });
@@ -192,12 +196,20 @@ export function ActiveWorkout() {
           </div>
           <h1 className="font-mono text-2xl font-bold tabular-nums">{formatDuration(elapsed)}</h1>
         </div>
-        <button
-          onClick={finishWorkout}
-          className="rounded-xl bg-[var(--color-primary)] px-4 py-2.5 text-sm font-semibold text-white"
-        >
-          Finish
-        </button>
+        <div className="flex flex-col items-end gap-1.5">
+          <button
+            onClick={finishWorkout}
+            className="rounded-xl bg-[var(--color-primary)] px-4 py-2.5 text-sm font-semibold text-white"
+          >
+            Finish
+          </button>
+          <button
+            onClick={() => setShowBodyWeight(true)}
+            className="flex items-center gap-1 text-xs font-medium text-[var(--color-text-faint)]"
+          >
+            <Scale size={12} /> Log weight
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-col gap-5 pb-24">
@@ -457,7 +469,10 @@ export function ActiveWorkout() {
       )}
 
       <button
-        onClick={() => setShowAddExercise(true)}
+        onClick={() => {
+          setNewExForm((f) => ({ ...f, category: categories[0]?.category ?? '' }));
+          setShowAddExercise(true);
+        }}
         className="fixed right-4 bottom-[140px] z-30 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--color-primary)] text-white shadow-lg"
         aria-label="Add exercise to this workout"
       >
@@ -492,18 +507,11 @@ export function ActiveWorkout() {
                 placeholder="Exercise name"
                 className="rounded-lg bg-[var(--color-surface-2)] px-3 py-2.5 text-sm outline-none"
               />
-              <input
+              <CategorySelect
+                categories={categories.map((c) => c.category)}
                 value={newExForm.category}
-                onChange={(e) => setNewExForm((f) => ({ ...f, category: e.target.value }))}
-                placeholder="Category (e.g. Chest)"
-                list="workout-categories"
-                className="rounded-lg bg-[var(--color-surface-2)] px-3 py-2.5 text-sm outline-none"
+                onChange={(category) => setNewExForm((f) => ({ ...f, category }))}
               />
-              <datalist id="workout-categories">
-                {categories.map(({ category }) => (
-                  <option key={category} value={category} />
-                ))}
-              </datalist>
               <input
                 value={newExForm.setupNote}
                 onChange={(e) => setNewExForm((f) => ({ ...f, setupNote: e.target.value }))}
@@ -531,6 +539,14 @@ export function ActiveWorkout() {
             </div>
           </div>
         </div>
+      )}
+
+      {showBodyWeight && (
+        <LogBodyWeightSheet
+          sessionId={sessionId}
+          defaultUnit={lastBodyWeight?.unit ?? 'kg'}
+          onClose={() => setShowBodyWeight(false)}
+        />
       )}
     </div>
   );

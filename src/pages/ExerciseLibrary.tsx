@@ -5,6 +5,7 @@ import { Search, Plus, ChevronRight } from 'lucide-react';
 import { db, newId } from '../data/db';
 import type { WeightUnit } from '../data/types';
 import { EmptyState } from '../components/EmptyState';
+import { ExercisePhotoThumb } from '../components/ExercisePhoto';
 
 const UNIT_OPTIONS: { value: WeightUnit; label: string }[] = [
   { value: 'kg', label: 'kg' },
@@ -106,9 +107,10 @@ export function ExerciseLibrary() {
                   <Link
                     key={ex.id}
                     to={`/exercises/${ex.id}`}
-                    className="flex items-center justify-between rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-2.5"
+                    className="flex items-center gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-2.5"
                   >
-                    <div className="min-w-0">
+                    <ExercisePhotoThumb exerciseId={ex.id} size={36} />
+                    <div className="min-w-0 flex-1">
                       <div className="truncate text-sm font-medium">{ex.name}</div>
                       {ex.setupNote && (
                         <div className="truncate text-xs text-[var(--color-text-faint)]">{ex.setupNote}</div>

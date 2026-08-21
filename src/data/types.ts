@@ -40,6 +40,12 @@ export interface WorkoutSession {
   notes?: string;
 }
 
+export interface ExercisePhoto {
+  exerciseId: string;
+  blob: Blob;
+  updatedAt: string;
+}
+
 export interface SetEntry {
   id: string;
   sessionId: string;

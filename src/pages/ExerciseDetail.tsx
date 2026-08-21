@@ -6,6 +6,7 @@ import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'rec
 import { db } from '../data/db';
 import { StatCard } from '../components/StatCard';
 import { EmptyState } from '../components/EmptyState';
+import { ExercisePhotoCard } from '../components/ExercisePhoto';
 import { estOneRepMax, topSetOf } from '../lib/calculations';
 import { formatWeight, weightTypeLabel } from '../lib/format';
 
@@ -68,7 +69,9 @@ export function ExerciseDetail() {
           </span>
         )}
       </div>
-      {exercise.setupNote && <p className="mb-4 text-sm text-[var(--color-text-faint)]">{exercise.setupNote}</p>}
+      {exercise.setupNote && <p className="mb-3 text-sm text-[var(--color-text-faint)]">{exercise.setupNote}</p>}
+
+      <ExercisePhotoCard exerciseId={exercise.id} />
 
       {!sets || sets.length === 0 ? (
         <EmptyState title="No sets logged yet" sub="Log this exercise in a workout to start tracking progress." />

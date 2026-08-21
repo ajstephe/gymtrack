@@ -6,6 +6,7 @@ import { db, newId } from '../data/db';
 import { useSessionStore } from '../store/sessionStore';
 import { useRestTimerStore } from '../store/restTimerStore';
 import { formatWeight, formatDuration } from '../lib/format';
+import { ExercisePhotoThumb, ExercisePhotoButton } from '../components/ExercisePhoto';
 import type { Exercise, SetEntry } from '../data/types';
 
 const REST_PRESETS = [60, 90, 120, 180];
@@ -117,6 +118,10 @@ export function ActiveWorkout() {
     await db.sets.delete(setId);
   }
 
+  async function setUnit(exId: string, unit: 'kg' | 'lb') {
+    await db.exercises.update(exId, { unit });
+  }
+
   async function finishWorkout() {
     if (!sessionId) return;
     await db.sessions.update(sessionId, { endedAt: new Date().toISOString() });
@@ -173,8 +178,9 @@ export function ActiveWorkout() {
                   >
                     <button
                       onClick={() => setExpandedId(isOpen ? null : ex.id)}
-                      className="flex w-full items-center justify-between px-4 py-3 text-left"
+                      className="flex w-full items-center gap-3 px-4 py-3 text-left"
                     >
+                      <ExercisePhotoThumb exerciseId={ex.id} size={36} />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                           <span className="truncate font-medium">{ex.name}</span>
@@ -203,6 +209,13 @@ export function ActiveWorkout() {
 
                     {isOpen && (
                       <div className="border-t border-[var(--color-border)] px-4 py-3.5">
+                        <div className="mb-3 flex items-center gap-2.5">
+                          <ExercisePhotoButton exerciseId={ex.id} size={44} />
+                          <span className="text-xs text-[var(--color-text-faint)]">
+                            {ex.setupNote ?? 'Snap a photo so you remember this machine'}
+                          </span>
+                        </div>
+
                         {logged.length > 0 && (
                           <div className="mb-3 flex flex-col gap-1.5">
                             {logged.map((s, i) => (
@@ -228,8 +241,28 @@ export function ActiveWorkout() {
 
                         <div className="mb-2.5 flex gap-2">
                           <label className="flex-1">
-                            <span className="mb-1 block text-[10px] uppercase tracking-wide text-[var(--color-text-faint)]">
-                              {ex.unit === 'bodyweight' ? 'Weight (opt.)' : ex.unit === 'stack' ? 'Stack #' : 'Weight'}
+                            <span className="mb-1 flex items-center justify-between">
+                              <span className="text-[10px] uppercase tracking-wide text-[var(--color-text-faint)]">
+                                {ex.unit === 'bodyweight' ? 'Weight (opt.)' : ex.unit === 'stack' ? 'Stack #' : 'Weight'}
+                              </span>
+                              {(ex.unit === 'kg' || ex.unit === 'lb') && (
+                                <span className="flex overflow-hidden rounded-full">
+                                  {(['kg', 'lb'] as const).map((u) => (
+                                    <button
+                                      key={u}
+                                      type="button"
+                                      onClick={() => setUnit(ex.id, u)}
+                                      className={`px-2 py-0.5 text-[10px] font-semibold ${
+                                        ex.unit === u
+                                          ? 'bg-[var(--color-primary)] text-white'
+                                          : 'bg-[var(--color-surface-2)] text-[var(--color-text-faint)]'
+                                      }`}
+                                    >
+                                      {u}
+                                    </button>
+                                  ))}
+                                </span>
+                              )}
                             </span>
                             <input
                               type="number"

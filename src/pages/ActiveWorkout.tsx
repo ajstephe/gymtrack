@@ -7,6 +7,7 @@ import { useSessionStore } from '../store/sessionStore';
 import { useRestTimerStore } from '../store/restTimerStore';
 import { formatWeight, formatDuration } from '../lib/format';
 import { ExercisePhotoThumb, ExercisePhotoButton } from '../components/ExercisePhoto';
+import { CategoryHeader } from '../components/CategoryHeader';
 import type { Exercise, SetEntry } from '../data/types';
 
 const REST_PRESETS = [60, 90, 120, 180];
@@ -160,9 +161,7 @@ export function ActiveWorkout() {
       <div className="flex flex-col gap-5 pb-24">
         {categories.map(({ category, exercises: exList }) => (
           <div key={category}>
-            <h2 className="mb-2 px-1 text-xs font-bold uppercase tracking-wide text-[var(--color-text-faint)]">
-              {category}
-            </h2>
+            <CategoryHeader category={category} />
             <div className="flex flex-col gap-2">
               {exList.map((ex) => {
                 const logged = setsByExercise.get(ex.id) ?? [];

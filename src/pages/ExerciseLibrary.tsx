@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Link } from 'react-router-dom';
-import { Search, Plus, ChevronRight } from 'lucide-react';
+import { Search, Plus, ChevronRight, Trash2 } from 'lucide-react';
 import { db, newId } from '../data/db';
-import type { WeightUnit } from '../data/types';
+import type { Exercise, WeightUnit } from '../data/types';
 import { EmptyState } from '../components/EmptyState';
 import { ExercisePhotoThumb } from '../components/ExercisePhoto';
+import { CategoryHeader } from '../components/CategoryHeader';
 
 const UNIT_OPTIONS: { value: WeightUnit; label: string }[] = [
   { value: 'kg', label: 'kg' },
@@ -63,10 +64,18 @@ export function ExerciseLibrary() {
     setShowAdd(false);
   }
 
+  async function removeExercise(ex: Exercise) {
+    if (!confirm(`Remove "${ex.name}" from this gym? Past history you've logged stays intact.`)) return;
+    await db.exercises.update(ex.id, { archived: true });
+  }
+
   return (
     <div className="px-4 pt-6">
       <h1 className="mb-4 text-2xl font-bold">Exercises</h1>
 
+      <div className="mb-1.5 px-1 text-[10px] font-bold uppercase tracking-wide text-[var(--color-text-faint)]">
+        Gym
+      </div>
       <div className="mb-4 flex gap-2 overflow-x-auto scrollbar-none">
         {routines.map((r) => (
           <button
@@ -99,25 +108,31 @@ export function ExerciseLibrary() {
         ) : (
           grouped.map(({ category, items }) => (
             <div key={category}>
-              <h2 className="mb-2 px-1 text-xs font-bold uppercase tracking-wide text-[var(--color-text-faint)]">
-                {category}
-              </h2>
+              <CategoryHeader category={category} />
               <div className="flex flex-col gap-1.5">
                 {items.map((ex) => (
-                  <Link
+                  <div
                     key={ex.id}
-                    to={`/exercises/${ex.id}`}
-                    className="flex items-center gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-2.5"
+                    className="flex items-center rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] pr-1.5"
                   >
-                    <ExercisePhotoThumb exerciseId={ex.id} size={36} />
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-medium">{ex.name}</div>
-                      {ex.setupNote && (
-                        <div className="truncate text-xs text-[var(--color-text-faint)]">{ex.setupNote}</div>
-                      )}
-                    </div>
-                    <ChevronRight size={16} className="shrink-0 text-[var(--color-text-faint)]" />
-                  </Link>
+                    <Link to={`/exercises/${ex.id}`} className="flex min-w-0 flex-1 items-center gap-3 px-3.5 py-2.5">
+                      <ExercisePhotoThumb exerciseId={ex.id} size={36} />
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-sm font-medium">{ex.name}</div>
+                        {ex.setupNote && (
+                          <div className="truncate text-xs text-[var(--color-text-faint)]">{ex.setupNote}</div>
+                        )}
+                      </div>
+                      <ChevronRight size={16} className="shrink-0 text-[var(--color-text-faint)]" />
+                    </Link>
+                    <button
+                      onClick={() => removeExercise(ex)}
+                      className="shrink-0 rounded-lg p-2 text-[var(--color-text-faint)] active:text-[var(--color-danger)]"
+                      aria-label={`Remove ${ex.name}`}
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
                 ))}
               </div>
             </div>
@@ -179,7 +194,7 @@ export function ExerciseLibrary() {
               onClick={() => setShowAdd(true)}
               className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-[var(--color-border)] px-4 py-3.5 text-sm text-[var(--color-text-dim)]"
             >
-              <Plus size={16} /> Add custom exercise
+              <Plus size={16} /> Add exercise to this gym
             </button>
           )}
         </div>

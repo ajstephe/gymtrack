@@ -11,20 +11,20 @@
 @theme {
   --font-sans: "Inter", system-ui, sans-serif;
 
-  --color-bg: #0a0a0f;
-  --color-surface: #16161f;
-  --color-surface-2: #1e1e29;
-  --color-border: #2a2a37;
-  --color-text: #e8e8ee;
-  --color-text-dim: #8f8fa3;
-  --color-text-faint: #5f5f70;
+  --color-bg: #000000;
+  --color-surface: #131315;
+  --color-surface-2: #1c1c1f;
+  --color-border: #29292d;
+  --color-text: #f5f5f7;
+  --color-text-dim: #98989f;
+  --color-text-faint: #616166;
 
-  --color-primary: #a855f7;
-  --color-primary-2: #ec4899;
-  --color-lime: #c4f042;
-  --color-crimson: #fb5279;
-  --color-azure: #38bdf8;
-  --color-amber: #fbbf24;
+  --color-primary: #3b82f6;
+  --color-primary-2: #6366f1;
+  --color-lime: #30d158;
+  --color-crimson: #ef4444;
+  --color-azure: #0ea5e9;
+  --color-amber: #f59e0b;
   --color-danger: #f87171;
 }
 
@@ -69,11 +69,8 @@ input[type="number"] {
   color: white;
 }
 
-.gradient-text {
-  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-2));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+.accent-text {
+  color: var(--color-primary);
 }
 
 .scrollbar-none::-webkit-scrollbar {

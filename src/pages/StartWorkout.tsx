@@ -56,7 +56,7 @@ export function StartWorkout() {
       {activeSession && !activeSession.endedAt && (
         <Link
           to={`/workout/${activeSession.id}`}
-          className="mb-5 flex items-center justify-between rounded-2xl border border-[var(--color-primary)]/40 bg-gradient-to-r from-[var(--color-primary)]/20 to-[var(--color-primary-2)]/20 px-4 py-3.5"
+          className="mb-5 flex items-center justify-between rounded-2xl border border-[var(--color-primary)]/40 bg-[var(--color-primary)]/12 px-4 py-3.5"
         >
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-primary)]">

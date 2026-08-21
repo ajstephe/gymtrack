@@ -168,7 +168,7 @@ export function ActiveWorkout() {
         </div>
         <button
           onClick={finishWorkout}
-          className="rounded-xl bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-2)] px-4 py-2.5 text-sm font-semibold text-white"
+          className="rounded-xl bg-[var(--color-primary)] px-4 py-2.5 text-sm font-semibold text-white"
         >
           Finish
         </button>
@@ -394,7 +394,7 @@ export function ActiveWorkout() {
                             onClick={() => updateDraft(ex.id, { warmup: !draft.warmup })}
                             className={`ml-auto flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${
                               draft.warmup
-                                ? 'bg-[var(--color-amber)] text-[#0a0a0f]'
+                                ? 'bg-[var(--color-amber)] text-[var(--color-bg)]'
                                 : 'bg-[var(--color-surface-2)] text-[var(--color-text-dim)]'
                             }`}
                           >
@@ -405,7 +405,7 @@ export function ActiveWorkout() {
                         <button
                           onClick={() => logSet(ex)}
                           disabled={!draft.reps || (!draft.weight && ex.unit !== 'bodyweight')}
-                          className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-[var(--color-lime)] py-2.5 font-semibold text-[#0a0a0f] active:scale-[0.98] disabled:opacity-40"
+                          className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-[var(--color-lime)] py-2.5 font-semibold text-[var(--color-bg)] active:scale-[0.98] disabled:opacity-40"
                         >
                           <Check size={17} strokeWidth={3} /> Log Set
                         </button>

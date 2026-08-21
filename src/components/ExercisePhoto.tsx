@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Camera, Trash2 } from 'lucide-react';
 import { db } from '../data/db';
+import { PhotoViewer } from './PhotoViewer';
 
 export function useExercisePhotoUrl(exerciseId: string): string | null {
   const photo = useLiveQuery(() => db.photos.get(exerciseId), [exerciseId]);
@@ -79,11 +80,14 @@ export function ExercisePhotoButton({ exerciseId, size = 44 }: { exerciseId: str
 export function ExercisePhotoCard({ exerciseId }: { exerciseId: string }) {
   const url = useExercisePhotoUrl(exerciseId);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [showViewer, setShowViewer] = useState(false);
 
   return (
     <div className="mb-4 overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]">
       {url ? (
-        <img src={url} alt="" className="h-48 w-full object-cover" />
+        <button type="button" onClick={() => setShowViewer(true)} className="block w-full" aria-label="View photo">
+          <img src={url} alt="" className="h-48 w-full object-cover" />
+        </button>
       ) : (
         <button
           type="button"
@@ -125,6 +129,7 @@ export function ExercisePhotoCard({ exerciseId }: { exerciseId: string }) {
           e.target.value = '';
         }}
       />
+      {showViewer && url && <PhotoViewer src={url} onClose={() => setShowViewer(false)} />}
     </div>
   );
 }

@@ -7,8 +7,8 @@ import { db } from '../data/db';
 import { StatCard } from '../components/StatCard';
 import { EmptyState } from '../components/EmptyState';
 import { ExercisePhotoCard } from '../components/ExercisePhoto';
-import { estOneRepMax, topSetOf } from '../lib/calculations';
-import { formatWeight, weightTypeLabel } from '../lib/format';
+import { estOneRepMax, topSetOf, workingSets } from '../lib/calculations';
+import { formatWeight, weightTypeLabel, trimNum } from '../lib/format';
 
 export function ExerciseDetail() {
   const { exerciseId } = useParams<{ exerciseId: string }>();
@@ -20,20 +20,29 @@ export function ExerciseDetail() {
   );
   const sessions = useLiveQuery(() => db.sessions.toArray(), []) ?? [];
 
+  const working = useMemo(() => (sets ? workingSets(sets) : []), [sets]);
+
   const bySession = useMemo(() => {
     if (!sets) return [];
     const sessionById = new Map(sessions.map((s) => [s.id, s]));
-    const map = new Map<string, typeof sets>();
+    const allBySession = new Map<string, typeof sets>();
+    const workingBySession = new Map<string, typeof sets>();
     for (const s of sets) {
-      const arr = map.get(s.sessionId) ?? [];
+      const arr = allBySession.get(s.sessionId) ?? [];
       arr.push(s);
-      map.set(s.sessionId, arr);
+      allBySession.set(s.sessionId, arr);
+      if (!s.isWarmup) {
+        const warr = workingBySession.get(s.sessionId) ?? [];
+        warr.push(s);
+        workingBySession.set(s.sessionId, warr);
+      }
     }
-    return [...map.entries()]
+    return [...allBySession.entries()]
+      .filter(([sessionId]) => workingBySession.has(sessionId))
       .map(([sessionId, s]) => ({
         sessionId,
         date: sessionById.get(sessionId)?.startedAt ?? s[0].completedAt,
-        top: topSetOf(s)!,
+        top: topSetOf(workingBySession.get(sessionId)!)!,
         sets: [...s].sort((a, b) => a.setNumber - b.setNumber),
       }))
       .sort((a, b) => a.date.localeCompare(b.date));
@@ -44,8 +53,8 @@ export function ExerciseDetail() {
     weight: row.top.weight,
   }));
 
-  const allTimeBest = sets && sets.length > 0 ? topSetOf(sets) : null;
-  const bestE1rm = sets && sets.length > 0 ? Math.max(...sets.map((s) => estOneRepMax(s.weight, s.reps))) : null;
+  const allTimeBest = working.length > 0 ? topSetOf(working) : null;
+  const bestE1rm = working.length > 0 ? Math.max(...working.map((s) => estOneRepMax(s.weight, s.reps))) : null;
   const lastSession = bySession[bySession.length - 1];
 
   if (!exercise) {
@@ -166,9 +175,16 @@ export function ExerciseDetail() {
                   {row.sets.map((s, i) => (
                     <span
                       key={s.id}
-                      className="rounded-lg bg-[var(--color-surface-2)] px-2.5 py-1 text-xs font-medium tabular-nums"
+                      className={`rounded-lg px-2.5 py-1 text-xs font-medium tabular-nums ${
+                        s.isWarmup
+                          ? 'bg-[var(--color-amber)]/10 text-[var(--color-amber)]'
+                          : 'bg-[var(--color-surface-2)]'
+                      }`}
                     >
-                      {i + 1}. {formatWeight(s.weight, s.unit)} × {s.reps}
+                      {s.isWarmup ? 'W' : i + 1}. {formatWeight(s.weight, s.unit)} × {s.reps}
+                      {s.rpe != null && (
+                        <span className="ml-1 font-normal text-[var(--color-text-faint)]">RPE {trimNum(s.rpe)}</span>
+                      )}
                     </span>
                   ))}
                 </div>

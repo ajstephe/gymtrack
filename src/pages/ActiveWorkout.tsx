@@ -1,16 +1,25 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { ChevronDown, Trash2, Check, X } from 'lucide-react';
+import { ChevronDown, Trash2, Check, X, Flame } from 'lucide-react';
 import { db, newId } from '../data/db';
 import { useSessionStore } from '../store/sessionStore';
 import { useRestTimerStore } from '../store/restTimerStore';
-import { formatWeight, formatDuration } from '../lib/format';
+import { formatWeight, formatDuration, trimNum } from '../lib/format';
+import { workingSets, suggestNextTarget } from '../lib/calculations';
 import { ExercisePhotoThumb, ExercisePhotoButton } from '../components/ExercisePhoto';
 import { CategoryHeader } from '../components/CategoryHeader';
 import type { Exercise, SetEntry } from '../data/types';
 
 const REST_PRESETS = [60, 90, 120, 180];
+const RPE_OPTIONS = [6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10];
+
+interface Draft {
+  weight: string;
+  reps: string;
+  rpe: string;
+  warmup: boolean;
+}
 
 export function ActiveWorkout() {
   const { sessionId } = useParams<{ sessionId: string }>();
@@ -37,7 +46,7 @@ export function ActiveWorkout() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const [restDuration, setRestDuration] = useState(90);
-  const [drafts, setDrafts] = useState<Record<string, { weight: string; reps: string }>>({});
+  const [drafts, setDrafts] = useState<Record<string, Draft>>({});
 
   useEffect(() => {
     if (!session || session.endedAt) return;
@@ -82,17 +91,17 @@ export function ActiveWorkout() {
     return prior.filter((s) => s.sessionId === latestSessionId).sort((a, b) => a.setNumber - b.setNumber);
   }
 
-  function defaultDraft(exId: string): { weight: string; reps: string } {
+  function defaultDraft(exId: string): Draft {
     const logged = setsByExercise.get(exId);
     const last = logged && logged.length > 0 ? logged[logged.length - 1] : lastTimeSets(exId)?.slice(-1)[0];
-    return { weight: last ? String(last.weight) : '', reps: last ? String(last.reps) : '' };
+    return { weight: last ? String(last.weight) : '', reps: last ? String(last.reps) : '', rpe: '', warmup: false };
   }
 
-  function draftFor(ex: Exercise): { weight: string; reps: string } {
+  function draftFor(ex: Exercise): Draft {
     return drafts[ex.id] ?? defaultDraft(ex.id);
   }
 
-  function updateDraft(exId: string, patch: Partial<{ weight: string; reps: string }>) {
+  function updateDraft(exId: string, patch: Partial<Draft>) {
     setDrafts((d) => ({ ...d, [exId]: { ...(d[exId] ?? defaultDraft(exId)), ...patch } }));
   }
 
@@ -110,7 +119,14 @@ export function ActiveWorkout() {
       weight,
       reps,
       unit: ex.unit,
+      isWarmup: draft.warmup || undefined,
+      rpe: draft.rpe ? parseFloat(draft.rpe) : undefined,
       completedAt: new Date().toISOString(),
+    });
+    setDrafts((d) => {
+      const next = { ...d };
+      delete next[ex.id];
+      return next;
     });
     startTimer(restDuration, ex.name);
   }
@@ -165,9 +181,13 @@ export function ActiveWorkout() {
             <div className="flex flex-col gap-2">
               {exList.map((ex) => {
                 const logged = setsByExercise.get(ex.id) ?? [];
+                const workingLogged = logged.filter((s) => !s.isWarmup);
                 const isOpen = expandedId === ex.id;
                 const last = lastTimeSets(ex.id);
-                const lastTop = last ? [...last].sort((a, b) => b.weight - a.weight)[0] : null;
+                const lastWorking = last ? workingSets(last) : [];
+                const lastTop =
+                  lastWorking.length > 0 ? [...lastWorking].sort((a, b) => b.weight - a.weight)[0] : null;
+                const suggestion = lastTop && workingLogged.length === 0 ? suggestNextTarget(lastTop) : null;
                 const draft = draftFor(ex);
 
                 return (
@@ -215,26 +235,65 @@ export function ActiveWorkout() {
                           </span>
                         </div>
 
+                        {suggestion && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              updateDraft(ex.id, {
+                                weight: String(suggestion.weight),
+                                reps: String(suggestion.reps),
+                              })
+                            }
+                            className="mb-3 flex w-full items-center justify-between rounded-xl bg-[var(--color-primary)]/12 px-3.5 py-2.5 text-left"
+                          >
+                            <span className="text-xs text-[var(--color-text-dim)]">{suggestion.reason}</span>
+                            <span className="shrink-0 rounded-full bg-[var(--color-primary)] px-2.5 py-1 text-xs font-semibold text-white">
+                              {ex.unit === 'bodyweight' && suggestion.weight === 0
+                                ? `${suggestion.reps} reps`
+                                : `${formatWeight(suggestion.weight, ex.unit)} × ${suggestion.reps}`}
+                            </span>
+                          </button>
+                        )}
+
                         {logged.length > 0 && (
                           <div className="mb-3 flex flex-col gap-1.5">
-                            {logged.map((s, i) => (
-                              <div
-                                key={s.id}
-                                className="flex items-center justify-between rounded-lg bg-[var(--color-surface-2)] px-3 py-1.5 text-sm"
-                              >
-                                <span className="text-[var(--color-text-faint)]">Set {i + 1}</span>
-                                <span className="font-medium tabular-nums">
-                                  {formatWeight(s.weight, s.unit)} × {s.reps}
-                                </span>
-                                <button
-                                  onClick={() => deleteSet(s.id)}
-                                  className="text-[var(--color-text-faint)] active:text-[var(--color-danger)]"
-                                  aria-label="Delete set"
-                                >
-                                  <Trash2 size={14} />
-                                </button>
-                              </div>
-                            ))}
+                            {(() => {
+                              let workingIndex = 0;
+                              return logged.map((s) => {
+                                if (!s.isWarmup) workingIndex++;
+                                return (
+                                  <div
+                                    key={s.id}
+                                    className="flex items-center justify-between rounded-lg bg-[var(--color-surface-2)] px-3 py-1.5 text-sm"
+                                  >
+                                    <span
+                                      className={
+                                        s.isWarmup
+                                          ? 'font-medium text-[var(--color-amber)]'
+                                          : 'text-[var(--color-text-faint)]'
+                                      }
+                                    >
+                                      {s.isWarmup ? 'Warm-up' : `Set ${workingIndex}`}
+                                    </span>
+                                    <span className="font-medium tabular-nums">
+                                      {formatWeight(s.weight, s.unit)} × {s.reps}
+                                      {s.rpe != null && (
+                                        <span className="ml-1.5 font-normal text-[var(--color-text-faint)]">
+                                          RPE {trimNum(s.rpe)}
+                                        </span>
+                                      )}
+                                    </span>
+                                    <button
+                                      onClick={() => deleteSet(s.id)}
+                                      className="text-[var(--color-text-faint)] active:text-[var(--color-danger)]"
+                                      aria-label="Delete set"
+                                    >
+                                      <Trash2 size={14} />
+                                    </button>
+                                  </div>
+                                );
+                              });
+                            })()}
                           </div>
                         )}
 
@@ -287,6 +346,35 @@ export function ActiveWorkout() {
                           </label>
                         </div>
 
+                        <div className="mb-2.5 flex items-center gap-1.5 overflow-x-auto scrollbar-none">
+                          <span className="shrink-0 text-[10px] uppercase tracking-wide text-[var(--color-text-faint)]">
+                            RPE
+                          </span>
+                          <button
+                            onClick={() => updateDraft(ex.id, { rpe: '' })}
+                            className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${
+                              draft.rpe === ''
+                                ? 'bg-[var(--color-primary)] text-white'
+                                : 'bg-[var(--color-surface-2)] text-[var(--color-text-dim)]'
+                            }`}
+                          >
+                            –
+                          </button>
+                          {RPE_OPTIONS.map((r) => (
+                            <button
+                              key={r}
+                              onClick={() => updateDraft(ex.id, { rpe: String(r) })}
+                              className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${
+                                draft.rpe === String(r)
+                                  ? 'bg-[var(--color-primary)] text-white'
+                                  : 'bg-[var(--color-surface-2)] text-[var(--color-text-dim)]'
+                              }`}
+                            >
+                              {trimNum(r)}
+                            </button>
+                          ))}
+                        </div>
+
                         <div className="mb-3 flex items-center gap-1.5">
                           <span className="text-[10px] uppercase tracking-wide text-[var(--color-text-faint)]">Rest</span>
                           {REST_PRESETS.map((p) => (
@@ -302,6 +390,16 @@ export function ActiveWorkout() {
                               {p}s
                             </button>
                           ))}
+                          <button
+                            onClick={() => updateDraft(ex.id, { warmup: !draft.warmup })}
+                            className={`ml-auto flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${
+                              draft.warmup
+                                ? 'bg-[var(--color-amber)] text-[#0a0a0f]'
+                                : 'bg-[var(--color-surface-2)] text-[var(--color-text-dim)]'
+                            }`}
+                          >
+                            <Flame size={12} /> Warm-up
+                          </button>
                         </div>
 
                         <button

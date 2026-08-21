@@ -1,9 +1,50 @@
 import { startOfWeek, endOfWeek, subWeeks, format, isSameDay, parseISO, differenceInCalendarDays } from 'date-fns';
-import type { SetEntry, WorkoutSession } from '../data/types';
+import type { SetEntry, WorkoutSession, WeightUnit } from '../data/types';
 
 export function estOneRepMax(weight: number, reps: number): number {
   if (reps <= 1) return weight;
   return weight * (1 + reps / 30);
+}
+
+/** Excludes warm-up sets — PRs, volume, and progress trends should reflect working sets only. */
+export function workingSets(sets: SetEntry[]): SetEntry[] {
+  return sets.filter((s) => !s.isWarmup);
+}
+
+const WEIGHT_INCREMENT: Record<WeightUnit, number> = {
+  kg: 2.5,
+  lb: 5,
+  stack: 1,
+  bodyweight: 2.5,
+};
+
+const REP_CEILING = 12;
+const REP_RESET = 8;
+
+export interface ProgressionSuggestion {
+  weight: number;
+  reps: number;
+  reason: string;
+}
+
+/** Simple double-progression rule: add a rep each time until a rep ceiling, then add weight and drop back down. */
+export function suggestNextTarget(last: SetEntry): ProgressionSuggestion {
+  if (last.unit === 'bodyweight' && last.weight === 0) {
+    return { weight: 0, reps: last.reps + 1, reason: `${last.reps} last time — try ${last.reps + 1}` };
+  }
+  if (last.reps >= REP_CEILING) {
+    const inc = WEIGHT_INCREMENT[last.unit];
+    return {
+      weight: Math.round((last.weight + inc) * 100) / 100,
+      reps: REP_RESET,
+      reason: `Hit ${last.reps} reps last time — add weight`,
+    };
+  }
+  return {
+    weight: last.weight,
+    reps: last.reps + 1,
+    reason: `${last.reps} last time — try 1 more rep`,
+  };
 }
 
 export function volumeOf(sets: SetEntry[]): number {

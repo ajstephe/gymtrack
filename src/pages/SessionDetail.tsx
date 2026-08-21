@@ -2,7 +2,8 @@ import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { ArrowLeft, Trash2 } from 'lucide-react';
 import { db } from '../data/db';
-import { formatWeight, formatVolume } from '../lib/format';
+import { formatWeight, formatVolume, trimNum } from '../lib/format';
+import { workingSets } from '../lib/calculations';
 
 export function SessionDetail() {
   const { sessionId } = useParams<{ sessionId: string }>();
@@ -31,7 +32,7 @@ export function SessionDetail() {
   }
   for (const arr of grouped.values()) arr.sort((a, b) => a.setNumber - b.setNumber);
 
-  const volume = sets.reduce((sum, s) => sum + s.weight * s.reps, 0);
+  const volume = workingSets(sets).reduce((sum, s) => sum + s.weight * s.reps, 0);
   const durationMin = session.endedAt
     ? Math.max(1, Math.round((new Date(session.endedAt).getTime() - new Date(session.startedAt).getTime()) / 60000))
     : null;
@@ -91,9 +92,16 @@ export function SessionDetail() {
                 {exSets.map((s, i) => (
                   <span
                     key={s.id}
-                    className="rounded-lg bg-[var(--color-surface-2)] px-2.5 py-1 text-xs font-medium tabular-nums"
+                    className={`rounded-lg px-2.5 py-1 text-xs font-medium tabular-nums ${
+                      s.isWarmup
+                        ? 'bg-[var(--color-amber)]/10 text-[var(--color-amber)]'
+                        : 'bg-[var(--color-surface-2)]'
+                    }`}
                   >
-                    {i + 1}. {formatWeight(s.weight, s.unit)} × {s.reps}
+                    {s.isWarmup ? 'W' : i + 1}. {formatWeight(s.weight, s.unit)} × {s.reps}
+                    {s.rpe != null && (
+                      <span className="ml-1 font-normal text-[var(--color-text-faint)]">RPE {trimNum(s.rpe)}</span>
+                    )}
                   </span>
                 ))}
               </div>

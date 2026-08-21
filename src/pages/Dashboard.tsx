@@ -6,7 +6,7 @@ import { db } from '../data/db';
 import { useSessionStore } from '../store/sessionStore';
 import { StatCard } from '../components/StatCard';
 import { EmptyState } from '../components/EmptyState';
-import { currentStreak, weeklyVolumeSeries, recentPRs } from '../lib/calculations';
+import { currentStreak, weeklyVolumeSeries, recentPRs, workingSets } from '../lib/calculations';
 import { formatVolume, formatWeight } from '../lib/format';
 import { startOfMonth } from 'date-fns';
 
@@ -19,8 +19,9 @@ export function Dashboard() {
   const finishedSessions = sessions.filter((s) => s.endedAt);
   const activeSession = sessions.find((s) => s.id === activeSessionId && !s.endedAt);
 
+  const working = workingSets(sets);
   const streak = currentStreak(finishedSessions);
-  const weekly = weeklyVolumeSeries(sets, 8);
+  const weekly = weeklyVolumeSeries(working, 8);
   const thisWeek = weekly[weekly.length - 1]?.volume ?? 0;
   const lastWeek = weekly[weekly.length - 2]?.volume ?? 0;
   const delta = lastWeek > 0 ? Math.round(((thisWeek - lastWeek) / lastWeek) * 100) : null;
@@ -28,7 +29,7 @@ export function Dashboard() {
   const monthStart = startOfMonth(new Date());
   const workoutsThisMonth = finishedSessions.filter((s) => new Date(s.startedAt) >= monthStart).length;
 
-  const prs = recentPRs(sets, 7).slice(0, 5);
+  const prs = recentPRs(working, 7).slice(0, 5);
   const exerciseById = new Map(exercises.map((e) => [e.id, e]));
 
   return (

@@ -56,6 +56,7 @@ export interface SetEntry {
   unit: WeightUnit;
   isDropSet?: boolean;
   isWarmup?: boolean;
+  rpe?: number;
   restTakenSec?: number;
   completedAt: string;
 }

@@ -38,19 +38,19 @@ async function savePhoto(exerciseId: string, file: File) {
   await db.photos.put({ exerciseId, blob: file, updatedAt: new Date().toISOString() });
 }
 
-/** Compact capture control: shows a thumbnail if present, tapping opens the camera/file picker. */
+/** Compact capture control: tap the photo to view/zoom it; a small badge retakes. Tap opens the camera/file picker when there's no photo yet. */
 export function ExercisePhotoButton({ exerciseId, size = 44 }: { exerciseId: string; size?: number }) {
   const url = useExercisePhotoUrl(exerciseId);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [showViewer, setShowViewer] = useState(false);
 
   return (
-    <>
+    <div className="relative shrink-0" style={{ width: size, height: size }}>
       <button
         type="button"
-        onClick={() => inputRef.current?.click()}
-        className="relative shrink-0 overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)]"
-        style={{ width: size, height: size }}
-        aria-label={url ? 'Retake photo' : 'Add photo'}
+        onClick={() => (url ? setShowViewer(true) : inputRef.current?.click())}
+        className="h-full w-full overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)]"
+        aria-label={url ? 'View photo' : 'Add photo'}
       >
         {url ? (
           <img src={url} alt="" className="h-full w-full object-cover" />
@@ -60,6 +60,16 @@ export function ExercisePhotoButton({ exerciseId, size = 44 }: { exerciseId: str
           </span>
         )}
       </button>
+      {url && (
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          className="absolute -right-1.5 -bottom-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--color-primary)] text-white ring-2 ring-[var(--color-surface)]"
+          aria-label="Retake photo"
+        >
+          <Camera size={10} />
+        </button>
+      )}
       <input
         ref={inputRef}
         type="file"
@@ -72,7 +82,8 @@ export function ExercisePhotoButton({ exerciseId, size = 44 }: { exerciseId: str
           e.target.value = '';
         }}
       />
-    </>
+      {showViewer && url && <PhotoViewer src={url} onClose={() => setShowViewer(false)} />}
+    </div>
   );
 }
 

@@ -7,13 +7,7 @@ import type { Exercise, WeightUnit } from '../data/types';
 import { EmptyState } from '../components/EmptyState';
 import { ExercisePhotoThumb } from '../components/ExercisePhoto';
 import { CategoryHeader } from '../components/CategoryHeader';
-
-const UNIT_OPTIONS: { value: WeightUnit; label: string }[] = [
-  { value: 'kg', label: 'kg' },
-  { value: 'lb', label: 'lb' },
-  { value: 'stack', label: 'Machine stack #' },
-  { value: 'bodyweight', label: 'Bodyweight' },
-];
+import { UNIT_OPTIONS } from '../lib/unitOptions';
 
 export function ExerciseLibrary() {
   const routines = useLiveQuery(() => db.routines.toArray(), []) ?? [];

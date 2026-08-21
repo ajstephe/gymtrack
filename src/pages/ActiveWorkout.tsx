@@ -1,15 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { ChevronDown, Trash2, Check, X, Flame } from 'lucide-react';
+import { ChevronDown, Trash2, Check, X, Flame, Plus } from 'lucide-react';
 import { db, newId } from '../data/db';
 import { useSessionStore } from '../store/sessionStore';
 import { useRestTimerStore } from '../store/restTimerStore';
 import { formatWeight, formatDuration, trimNum } from '../lib/format';
 import { workingSets, suggestNextTarget } from '../lib/calculations';
+import { UNIT_OPTIONS } from '../lib/unitOptions';
 import { ExercisePhotoThumb, ExercisePhotoButton } from '../components/ExercisePhoto';
 import { CategoryHeader } from '../components/CategoryHeader';
-import type { Exercise, SetEntry } from '../data/types';
+import type { Exercise, SetEntry, WeightUnit } from '../data/types';
 
 const REST_PRESETS = [60, 90, 120, 180];
 const RPE_OPTIONS = [6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10];
@@ -47,6 +48,8 @@ export function ActiveWorkout() {
   const [elapsed, setElapsed] = useState(0);
   const [restDuration, setRestDuration] = useState(90);
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
+  const [showAddExercise, setShowAddExercise] = useState(false);
+  const [newExForm, setNewExForm] = useState({ name: '', category: '', unit: 'kg' as WeightUnit, setupNote: '' });
 
   useEffect(() => {
     if (!session || session.endedAt) return;
@@ -139,6 +142,29 @@ export function ActiveWorkout() {
     await db.exercises.update(exId, { unit });
   }
 
+  async function addExerciseOnTheFly() {
+    if (!newExForm.name.trim() || !session) return;
+    const count = await db.exercises.where('routineId').equals(session.routineId).count();
+    const createdId = newId('ex');
+    await db.exercises.add({
+      id: createdId,
+      routineId: session.routineId,
+      name: newExForm.name.trim(),
+      category: newExForm.category.trim() || 'Other',
+      unit: newExForm.unit,
+      weightType: null,
+      setupNote: newExForm.setupNote.trim() || undefined,
+      order: count + 1,
+      isCustom: true,
+    });
+    setNewExForm({ name: '', category: '', unit: 'kg', setupNote: '' });
+    setShowAddExercise(false);
+    setExpandedId(createdId);
+    setTimeout(() => {
+      document.getElementById(`ex-${createdId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
+  }
+
   async function finishWorkout() {
     if (!sessionId) return;
     await db.sessions.update(sessionId, { endedAt: new Date().toISOString() });
@@ -193,6 +219,7 @@ export function ActiveWorkout() {
                 return (
                   <div
                     key={ex.id}
+                    id={`ex-${ex.id}`}
                     className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]"
                   >
                     <button
@@ -422,11 +449,88 @@ export function ActiveWorkout() {
       {expandedId && (
         <button
           onClick={() => setExpandedId(null)}
-          className="fixed right-4 bottom-[140px] z-30 flex h-11 w-11 items-center justify-center rounded-full bg-[var(--color-surface-2)] shadow-lg"
+          className="fixed right-4 bottom-[200px] z-30 flex h-11 w-11 items-center justify-center rounded-full bg-[var(--color-surface-2)] shadow-lg"
           aria-label="Collapse"
         >
           <X size={18} />
         </button>
+      )}
+
+      <button
+        onClick={() => setShowAddExercise(true)}
+        className="fixed right-4 bottom-[140px] z-30 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--color-primary)] text-white shadow-lg"
+        aria-label="Add exercise to this workout"
+      >
+        <Plus size={22} strokeWidth={2.5} />
+      </button>
+
+      {showAddExercise && (
+        <div
+          className="fixed inset-0 z-40 flex items-end justify-center bg-black/60"
+          onClick={() => setShowAddExercise(false)}
+        >
+          <div
+            className="w-full max-w-[560px] rounded-t-3xl border-t border-[var(--color-border)] bg-[var(--color-surface)] p-4"
+            style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 16px)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-lg font-bold">Add Exercise</h2>
+              <button
+                onClick={() => setShowAddExercise(false)}
+                className="text-[var(--color-text-faint)]"
+                aria-label="Close"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="flex flex-col gap-2.5">
+              <input
+                autoFocus
+                value={newExForm.name}
+                onChange={(e) => setNewExForm((f) => ({ ...f, name: e.target.value }))}
+                placeholder="Exercise name"
+                className="rounded-lg bg-[var(--color-surface-2)] px-3 py-2.5 text-sm outline-none"
+              />
+              <input
+                value={newExForm.category}
+                onChange={(e) => setNewExForm((f) => ({ ...f, category: e.target.value }))}
+                placeholder="Category (e.g. Chest)"
+                list="workout-categories"
+                className="rounded-lg bg-[var(--color-surface-2)] px-3 py-2.5 text-sm outline-none"
+              />
+              <datalist id="workout-categories">
+                {categories.map(({ category }) => (
+                  <option key={category} value={category} />
+                ))}
+              </datalist>
+              <input
+                value={newExForm.setupNote}
+                onChange={(e) => setNewExForm((f) => ({ ...f, setupNote: e.target.value }))}
+                placeholder="Setup note (seat/pin, optional)"
+                className="rounded-lg bg-[var(--color-surface-2)] px-3 py-2.5 text-sm outline-none"
+              />
+              <select
+                value={newExForm.unit}
+                onChange={(e) => setNewExForm((f) => ({ ...f, unit: e.target.value as WeightUnit }))}
+                className="rounded-lg bg-[var(--color-surface-2)] px-3 py-2.5 text-sm outline-none"
+              >
+                {UNIT_OPTIONS.map((u) => (
+                  <option key={u.value} value={u.value}>
+                    {u.label}
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={addExerciseOnTheFly}
+                disabled={!newExForm.name.trim()}
+                className="mt-1 rounded-lg bg-[var(--color-primary)] py-2.5 text-sm font-semibold text-white disabled:opacity-40"
+              >
+                Add to Workout
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

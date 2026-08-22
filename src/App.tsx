@@ -8,6 +8,7 @@ import { Dashboard } from './pages/Dashboard';
 import { StartWorkout } from './pages/StartWorkout';
 import { ActiveWorkout } from './pages/ActiveWorkout';
 import { History } from './pages/History';
+import { Calendar } from './pages/Calendar';
 import { SessionDetail } from './pages/SessionDetail';
 import { ExerciseLibrary } from './pages/ExerciseLibrary';
 import { ExerciseDetail } from './pages/ExerciseDetail';
@@ -40,6 +41,7 @@ function App() {
           <Route path="/workout/:sessionId" element={<ActiveWorkout />} />
           <Route path="/history" element={<History />} />
           <Route path="/history/:sessionId" element={<SessionDetail />} />
+          <Route path="/calendar" element={<Calendar />} />
           <Route path="/exercises" element={<ExerciseLibrary />} />
           <Route path="/exercises/:exerciseId" element={<ExerciseDetail />} />
           <Route path="/settings" element={<Settings />} />

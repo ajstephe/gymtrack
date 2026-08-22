@@ -1,10 +1,11 @@
 import { NavLink } from 'react-router-dom';
-import { Home, Dumbbell, History, ListTree } from 'lucide-react';
+import { Home, Dumbbell, History, CalendarDays, ListTree } from 'lucide-react';
 
 const tabs = [
   { to: '/', label: 'Home', icon: Home, end: true },
   { to: '/train', label: 'Train', icon: Dumbbell, end: false },
   { to: '/history', label: 'History', icon: History, end: false },
+  { to: '/calendar', label: 'Calendar', icon: CalendarDays, end: false },
   { to: '/exercises', label: 'Exercises', icon: ListTree, end: false },
 ];
 

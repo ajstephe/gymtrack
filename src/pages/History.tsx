@@ -1,25 +1,47 @@
+import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Link } from 'react-router-dom';
 import { ChevronRight, Dumbbell } from 'lucide-react';
 import { db } from '../data/db';
 import { EmptyState } from '../components/EmptyState';
+import { WorkoutCalendar } from '../components/WorkoutCalendar';
 import { formatVolume } from '../lib/format';
 
 export function History() {
+  const [view, setView] = useState<'list' | 'calendar'>('list');
+
   const sessions = useLiveQuery(async () => {
     const all = await db.sessions.toArray();
     return all.filter((s) => s.endedAt).sort((a, b) => b.startedAt.localeCompare(a.startedAt));
   }, []);
   const routines = useLiveQuery(() => db.routines.toArray(), []) ?? [];
+  const exercises = useLiveQuery(() => db.exercises.toArray(), []) ?? [];
   const sets = useLiveQuery(() => db.sets.toArray(), []) ?? [];
 
   const routineById = new Map(routines.map((r) => [r.id, r]));
 
   return (
     <div className="px-4 pt-6">
-      <h1 className="mb-5 text-2xl font-bold">History</h1>
+      <div className="mb-5 flex items-center justify-between">
+        <h1 className="text-2xl font-bold">History</h1>
+        <div className="flex overflow-hidden rounded-full bg-[var(--color-surface)]">
+          {(['list', 'calendar'] as const).map((v) => (
+            <button
+              key={v}
+              onClick={() => setView(v)}
+              className={`px-3.5 py-1.5 text-sm font-medium capitalize ${
+                view === v ? 'bg-[var(--color-primary)] text-white' : 'text-[var(--color-text-dim)]'
+              }`}
+            >
+              {v}
+            </button>
+          ))}
+        </div>
+      </div>
 
-      {sessions == null ? null : sessions.length === 0 ? (
+      {view === 'calendar' ? (
+        <WorkoutCalendar sessions={sessions ?? []} sets={sets} exercises={exercises} routines={routines} />
+      ) : sessions == null ? null : sessions.length === 0 ? (
         <EmptyState
           icon={<Dumbbell size={28} />}
           title="No workouts yet"

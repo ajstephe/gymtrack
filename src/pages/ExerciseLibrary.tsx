@@ -7,6 +7,7 @@ import type { Exercise, WeightUnit } from '../data/types';
 import { EmptyState } from '../components/EmptyState';
 import { ExercisePhotoThumb } from '../components/ExercisePhoto';
 import { CategoryHeader } from '../components/CategoryHeader';
+import { Collapse } from '../components/Collapse';
 import { CategorySelect } from '../components/CategorySelect';
 import { UNIT_OPTIONS } from '../lib/unitOptions';
 
@@ -102,7 +103,7 @@ export function ExerciseLibrary() {
           <button
             key={r.id}
             onClick={() => setRoutineId(r.id)}
-            className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm font-medium ${
+            className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm font-medium transition active:scale-95 ${
               activeRoutineId === r.id
                 ? 'bg-[var(--color-primary)] text-white'
                 : 'bg-[var(--color-surface)] text-[var(--color-text-dim)]'
@@ -137,12 +138,12 @@ export function ExerciseLibrary() {
                 collapsed={isCollapsed}
                 onToggle={() => toggleCategory(category)}
               />
-              {!isCollapsed && (
+              <Collapse open={!isCollapsed}>
               <div className="flex flex-col gap-1.5">
                 {items.map((ex) => (
                   <div
                     key={ex.id}
-                    className="flex items-center rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] pr-1.5"
+                    className="flex items-center rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] pr-1.5 transition active:scale-[0.99]"
                   >
                     <Link to={`/exercises/${ex.id}`} className="flex min-w-0 flex-1 items-center gap-3 px-3.5 py-2.5">
                       <ExercisePhotoThumb exerciseId={ex.id} size={36} />
@@ -156,7 +157,7 @@ export function ExerciseLibrary() {
                     </Link>
                     <button
                       onClick={() => removeExercise(ex)}
-                      className="shrink-0 rounded-lg p-2 text-[var(--color-text-faint)] active:text-[var(--color-danger)]"
+                      className="shrink-0 rounded-lg p-2 text-[var(--color-text-faint)] transition active:scale-90 active:text-[var(--color-danger)]"
                       aria-label={`Remove ${ex.name}`}
                     >
                       <Trash2 size={15} />
@@ -164,7 +165,7 @@ export function ExerciseLibrary() {
                   </div>
                 ))}
               </div>
-              )}
+              </Collapse>
             </div>
             );
           })
@@ -207,13 +208,13 @@ export function ExerciseLibrary() {
               <div className="flex gap-2">
                 <button
                   onClick={() => setShowAdd(false)}
-                  className="flex-1 rounded-lg bg-[var(--color-surface-2)] py-2 text-sm font-medium"
+                  className="flex-1 rounded-lg bg-[var(--color-surface-2)] py-2 text-sm font-medium transition active:scale-95"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={addExercise}
-                  className="flex-1 rounded-lg bg-[var(--color-primary)] py-2 text-sm font-medium text-white"
+                  className="flex-1 rounded-lg bg-[var(--color-primary)] py-2 text-sm font-medium text-white transition active:scale-95"
                 >
                   Add
                 </button>
@@ -225,7 +226,7 @@ export function ExerciseLibrary() {
                 setForm((f) => ({ ...f, category: allCategories[0] ?? '' }));
                 setShowAdd(true);
               }}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-[var(--color-border)] px-4 py-3.5 text-sm text-[var(--color-text-dim)]"
+              className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-[var(--color-border)] px-4 py-3.5 text-sm text-[var(--color-text-dim)] transition active:scale-[0.98]"
             >
               <Plus size={16} /> Add exercise to this gym
             </button>

@@ -58,7 +58,7 @@ export function Dashboard() {
         </div>
         <Link
           to="/settings"
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-surface)] text-[var(--color-text-dim)]"
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-surface)] text-[var(--color-text-dim)] transition active:scale-90"
           aria-label="Settings"
         >
           <SettingsIcon size={17} />
@@ -68,7 +68,7 @@ export function Dashboard() {
       {activeSession ? (
         <Link
           to={`/workout/${activeSession.id}`}
-          className="mb-5 flex items-center justify-between rounded-2xl border border-[var(--color-primary)]/40 bg-[var(--color-primary)]/12 px-4 py-3.5"
+          className="mb-5 flex items-center justify-between rounded-2xl border border-[var(--color-primary)]/40 bg-[var(--color-primary)]/12 px-4 py-3.5 transition active:scale-[0.98]"
         >
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-primary)]">
@@ -84,7 +84,7 @@ export function Dashboard() {
       ) : (
         <Link
           to="/train"
-          className="mb-5 flex items-center justify-between rounded-2xl bg-[var(--color-primary)] px-4 py-3.5 font-semibold text-white"
+          className="btn-glow-primary mb-5 flex items-center justify-between rounded-2xl px-4 py-3.5 font-semibold text-white active:scale-[0.98]"
         >
           Start Workout
           <ChevronRight size={20} />
@@ -157,7 +157,7 @@ export function Dashboard() {
           </h2>
           <button
             onClick={() => setShowBodyWeight(true)}
-            className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--color-surface-2)]"
+            className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--color-surface-2)] transition active:scale-90"
             aria-label="Log body weight"
           >
             <Plus size={14} />
@@ -230,7 +230,7 @@ export function Dashboard() {
                 <Link
                   key={`${pr.exerciseId}-${pr.achievedAt}`}
                   to={`/exercises/${pr.exerciseId}`}
-                  className="flex items-center justify-between rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-2.5"
+                  className="flex items-center justify-between rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-2.5 transition active:scale-[0.98]"
                 >
                   <div>
                     <div className="text-sm font-medium">{ex?.name ?? 'Exercise'}</div>

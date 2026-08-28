@@ -56,7 +56,7 @@ export function StartWorkout() {
       {activeSession && !activeSession.endedAt && (
         <Link
           to={`/workout/${activeSession.id}`}
-          className="mb-5 flex items-center justify-between rounded-2xl border border-[var(--color-primary)]/40 bg-[var(--color-primary)]/12 px-4 py-3.5"
+          className="mb-5 flex items-center justify-between rounded-2xl border border-[var(--color-primary)]/40 bg-[var(--color-primary)]/12 px-4 py-3.5 transition active:scale-[0.98]"
         >
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-primary)]">
@@ -109,7 +109,7 @@ export function StartWorkout() {
             />
             <button
               onClick={createRoutine}
-              className="rounded-lg bg-[var(--color-primary)] px-3 py-2 text-sm font-medium text-white"
+              className="rounded-lg bg-[var(--color-primary)] px-3 py-2 text-sm font-medium text-white transition active:scale-95"
             >
               Add
             </button>
@@ -117,7 +117,7 @@ export function StartWorkout() {
         ) : (
           <button
             onClick={() => setAddingRoutine(true)}
-            className="flex items-center justify-center gap-2 rounded-2xl border border-dashed border-[var(--color-border)] px-4 py-3.5 text-sm text-[var(--color-text-dim)]"
+            className="flex items-center justify-center gap-2 rounded-2xl border border-dashed border-[var(--color-border)] px-4 py-3.5 text-sm text-[var(--color-text-dim)] transition active:scale-[0.98]"
           >
             <Plus size={16} /> New gym
           </button>

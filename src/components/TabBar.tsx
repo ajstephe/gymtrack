@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { Home, Dumbbell, History, CalendarDays, ListTree } from 'lucide-react';
 
 const tabs = [
@@ -10,23 +10,42 @@ const tabs = [
 ];
 
 export function TabBar() {
+  const location = useLocation();
+  const activeIndex = tabs.findIndex((t) =>
+    t.end ? location.pathname === t.to : location.pathname.startsWith(t.to)
+  );
+
   return (
-    <nav className="sticky bottom-0 z-30 border-t border-[var(--color-border)] bg-[var(--color-bg)]/95 backdrop-blur pb-[env(safe-area-inset-bottom)]">
-      <div className="flex items-stretch justify-around px-2 pt-1.5">
+    <nav className="sticky bottom-0 z-30 border-t border-[var(--color-border)] bg-[var(--color-bg)]/95 px-2 backdrop-blur pb-[env(safe-area-inset-bottom)]">
+      <div className="relative flex items-stretch justify-around pt-1.5">
+        {activeIndex >= 0 && (
+          <div
+            aria-hidden="true"
+            className="absolute inset-y-1.5 left-0 rounded-xl bg-[var(--color-surface-2)] transition-transform duration-300 ease-out"
+            style={{
+              width: `${100 / tabs.length}%`,
+              transform: `translateX(${activeIndex * 100}%)`,
+            }}
+          />
+        )}
         {tabs.map(({ to, label, icon: Icon, end }) => (
           <NavLink
             key={to}
             to={to}
             end={end}
             className={({ isActive }) =>
-              `flex flex-1 flex-col items-center gap-1 rounded-xl py-2 text-[11px] font-medium transition-colors ${
+              `relative z-10 flex flex-1 flex-col items-center gap-1 rounded-xl py-2 text-[11px] font-medium transition-all active:scale-90 ${
                 isActive ? 'text-[var(--color-text)]' : 'text-[var(--color-text-faint)]'
               }`
             }
           >
             {({ isActive }) => (
               <>
-                <Icon size={22} strokeWidth={isActive ? 2.4 : 1.8} className={isActive ? 'text-[var(--color-primary)]' : ''} />
+                <Icon
+                  size={22}
+                  strokeWidth={isActive ? 2.4 : 1.8}
+                  className={`transition-colors ${isActive ? 'text-[var(--color-primary)]' : ''}`}
+                />
                 {label}
               </>
             )}

@@ -42,7 +42,10 @@ export function CategoryHeader({
 
   if (onToggle) {
     return (
-      <button onClick={onToggle} className="mb-2.5 flex w-full items-center gap-2 px-1 text-left">
+      <button
+        onClick={onToggle}
+        className="mb-2.5 flex w-full items-center gap-2 px-1 text-left transition active:scale-[0.98]"
+      >
         {inner}
       </button>
     );

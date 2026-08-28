@@ -35,17 +35,19 @@ function App() {
   return (
     <>
       <main className="safe-top flex-1 overflow-y-auto pb-6">
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/train" element={<StartWorkout />} />
-          <Route path="/workout/:sessionId" element={<ActiveWorkout />} />
-          <Route path="/history" element={<History />} />
-          <Route path="/history/:sessionId" element={<SessionDetail />} />
-          <Route path="/calendar" element={<Calendar />} />
-          <Route path="/exercises" element={<ExerciseLibrary />} />
-          <Route path="/exercises/:exerciseId" element={<ExerciseDetail />} />
-          <Route path="/settings" element={<Settings />} />
-        </Routes>
+        <div key={location.pathname} className="page-fade-in">
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/train" element={<StartWorkout />} />
+            <Route path="/workout/:sessionId" element={<ActiveWorkout />} />
+            <Route path="/history" element={<History />} />
+            <Route path="/history/:sessionId" element={<SessionDetail />} />
+            <Route path="/calendar" element={<Calendar />} />
+            <Route path="/exercises" element={<ExerciseLibrary />} />
+            <Route path="/exercises/:exerciseId" element={<ExerciseDetail />} />
+            <Route path="/settings" element={<Settings />} />
+          </Routes>
+        </div>
       </main>
       <RestTimer />
       {showTabBar && <TabBar />}

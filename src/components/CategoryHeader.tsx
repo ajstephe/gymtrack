@@ -19,8 +19,8 @@ export function CategoryHeader({
   const inner = (
     <>
       <span
-        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full"
-        style={{ background: `${color}22` }}
+        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2"
+        style={{ background: `${color}22`, borderColor: color }}
       >
         <Icon size={13} style={{ color }} strokeWidth={2.4} />
       </span>

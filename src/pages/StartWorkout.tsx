@@ -56,7 +56,7 @@ export function StartWorkout() {
       {activeSession && !activeSession.endedAt && (
         <Link
           to={`/workout/${activeSession.id}`}
-          className="mb-5 flex items-center justify-between rounded-2xl border border-[var(--color-primary)]/40 bg-[var(--color-primary)]/12 px-4 py-3.5 transition active:scale-[0.98]"
+          className="card-bevel mb-5 flex items-center justify-between rounded-2xl border-2 border-[var(--color-border)] bg-[var(--color-primary)]/12 px-4 py-3.5 transition active:scale-[0.98]"
         >
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-primary)]">
@@ -77,7 +77,7 @@ export function StartWorkout() {
             key={r.id}
             onClick={() => startWorkout(r.id)}
             disabled={!!(activeSession && !activeSession.endedAt)}
-            className="flex items-center justify-between rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-4 text-left transition active:scale-[0.98] disabled:opacity-40"
+            className="card-bevel flex items-center justify-between rounded-2xl border-2 border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-4 text-left transition active:scale-[0.98] disabled:opacity-40"
           >
             <div className="flex items-center gap-3">
               <div
@@ -98,18 +98,18 @@ export function StartWorkout() {
         ))}
 
         {addingRoutine ? (
-          <div className="flex items-center gap-2 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
+          <div className="flex items-center gap-2 rounded-2xl border-2 border-[var(--color-border)] bg-[var(--color-surface)] p-3">
             <input
               autoFocus
               value={newRoutineName}
               onChange={(e) => setNewRoutineName(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && createRoutine()}
               placeholder="Gym name, e.g. Fierce"
-              className="flex-1 rounded-lg bg-[var(--color-surface-2)] px-3 py-2 text-sm outline-none"
+              className="flex-1 rounded-lg border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 py-2 text-sm outline-none"
             />
             <button
               onClick={createRoutine}
-              className="rounded-lg bg-[var(--color-primary)] px-3 py-2 text-sm font-medium text-white transition active:scale-95"
+              className="btn-glow-primary rounded-lg px-3 py-2 text-sm transition active:scale-95"
             >
               Add
             </button>
@@ -117,7 +117,7 @@ export function StartWorkout() {
         ) : (
           <button
             onClick={() => setAddingRoutine(true)}
-            className="flex items-center justify-center gap-2 rounded-2xl border border-dashed border-[var(--color-border)] px-4 py-3.5 text-sm text-[var(--color-text-dim)] transition active:scale-[0.98]"
+            className="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[var(--color-border)] px-4 py-3.5 text-sm text-[var(--color-text-dim)] transition active:scale-[0.98]"
           >
             <Plus size={16} /> New gym
           </button>

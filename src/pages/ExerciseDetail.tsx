@@ -119,7 +119,7 @@ export function ExerciseDetail() {
           </div>
 
           {chartData.length > 1 && (
-            <div className="mb-5 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+            <div className="mb-5 rounded-2xl border-2 border-[var(--color-border)] bg-[var(--color-surface)] p-4">
               <h2 className="mb-2 text-sm font-semibold text-[var(--color-text-dim)]">Top Set Weight</h2>
               <ResponsiveContainer width="100%" height={140}>
                 <LineChart data={chartData} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
@@ -163,7 +163,7 @@ export function ExerciseDetail() {
           </h2>
           <div className="flex flex-col gap-2 pb-6">
             {[...bySession].reverse().map((row) => (
-              <div key={row.sessionId} className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3.5">
+              <div key={row.sessionId} className="rounded-2xl border-2 border-[var(--color-border)] bg-[var(--color-surface)] p-3.5">
                 <div className="mb-2 text-xs text-[var(--color-text-faint)]">
                   {new Date(row.date).toLocaleDateString(undefined, {
                     weekday: 'short',

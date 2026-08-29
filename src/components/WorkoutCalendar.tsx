@@ -117,9 +117,9 @@ export function WorkoutCalendar({
               disabled={!hasWorkout}
               className={`flex aspect-square flex-col items-center justify-center gap-1 rounded-lg text-xs transition-colors ${
                 selected
-                  ? 'bg-[var(--color-primary)]/20 ring-1 ring-[var(--color-primary)]'
+                  ? 'bg-[var(--color-primary)]/20 ring-2 ring-[var(--color-primary)]'
                   : hasWorkout
-                    ? 'bg-[var(--color-surface)]'
+                    ? 'border-2 border-[var(--color-border)] bg-[var(--color-surface)]'
                     : ''
               } ${!inMonth ? 'opacity-30' : ''}`}
             >
@@ -134,11 +134,11 @@ export function WorkoutCalendar({
               >
                 {format(day.date, 'd')}
               </span>
-              <span className="flex h-1.5 gap-0.5">
+              <span className="flex h-1.5 gap-1">
                 {day.categories.slice(0, 4).map((cat) => (
                   <span
                     key={cat}
-                    className="h-1.5 w-1.5 rounded-full"
+                    className="h-1.5 w-1.5 rotate-45"
                     style={{ background: categoryColor(cat) }}
                   />
                 ))}
@@ -165,15 +165,15 @@ export function WorkoutCalendar({
               <Link
                 key={session.id}
                 to={`/history/${session.id}`}
-                className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-2.5"
+                className="card-bevel rounded-xl border-2 border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-2.5 transition active:scale-[0.98]"
               >
                 <div className="text-sm font-medium">{routineById.get(session.routineId)?.name ?? 'Workout'}</div>
                 <div className="mt-1.5 flex flex-wrap gap-1">
                   {cats.map((cat) => (
                     <span
                       key={cat}
-                      className="rounded-full px-2 py-0.5 text-[10px] font-medium"
-                      style={{ background: `${categoryColor(cat)}22`, color: categoryColor(cat) }}
+                      className="rounded-full border border-[var(--color-border)] px-2 py-0.5 text-[10px] font-bold text-[#fffdf5]"
+                      style={{ background: categoryColor(cat) }}
                     >
                       {cat}
                     </span>

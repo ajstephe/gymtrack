@@ -16,12 +16,12 @@ export function TabBar() {
   );
 
   return (
-    <nav className="sticky bottom-0 z-30 border-t border-[var(--color-border)] bg-[var(--color-bg)]/95 px-2 backdrop-blur pb-[env(safe-area-inset-bottom)]">
+    <nav className="sticky bottom-0 z-30 border-t-[3px] border-[var(--color-border)] bg-[var(--color-bg)] px-2 pb-[env(safe-area-inset-bottom)]">
       <div className="relative flex items-stretch justify-around pt-1.5">
         {activeIndex >= 0 && (
           <div
             aria-hidden="true"
-            className="absolute inset-y-1.5 left-0 rounded-xl bg-[var(--color-surface-2)] transition-transform duration-300 ease-out"
+            className="absolute inset-y-1.5 left-0 rounded-xl border-2 border-[var(--color-border)] bg-[var(--color-lime)] transition-transform duration-300 ease-out"
             style={{
               width: `${100 / tabs.length}%`,
               transform: `translateX(${activeIndex * 100}%)`,
@@ -34,7 +34,7 @@ export function TabBar() {
             to={to}
             end={end}
             className={({ isActive }) =>
-              `relative z-10 flex flex-1 flex-col items-center gap-1 rounded-xl py-2 text-[11px] font-medium transition-all active:scale-90 ${
+              `font-display relative z-10 flex flex-1 flex-col items-center gap-1 rounded-xl py-2 text-[10px] transition-all active:scale-90 ${
                 isActive ? 'text-[var(--color-text)]' : 'text-[var(--color-text-faint)]'
               }`
             }
@@ -44,7 +44,7 @@ export function TabBar() {
                 <Icon
                   size={22}
                   strokeWidth={isActive ? 2.4 : 1.8}
-                  className={`transition-colors ${isActive ? 'text-[var(--color-primary)]' : ''}`}
+                  className={`transition-colors ${isActive ? 'text-[var(--color-text)]' : ''}`}
                 />
                 {label}
               </>

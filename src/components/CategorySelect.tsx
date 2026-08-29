@@ -21,7 +21,7 @@ export function CategorySelect({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder="New category name"
-          className="flex-1 rounded-lg bg-[var(--color-surface-2)] px-3 py-2.5 text-sm outline-none"
+          className="flex-1 rounded-lg border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 py-2.5 text-sm outline-none"
         />
         <button
           type="button"
@@ -29,7 +29,7 @@ export function CategorySelect({
             setCreatingNew(false);
             onChange(categories[0] ?? '');
           }}
-          className="shrink-0 rounded-lg bg-[var(--color-surface-2)] px-3 py-2.5 text-xs font-medium text-[var(--color-text-faint)]"
+          className="shrink-0 rounded-lg border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 py-2.5 text-xs font-medium text-[var(--color-text-faint)]"
         >
           Cancel
         </button>
@@ -48,7 +48,7 @@ export function CategorySelect({
           onChange(e.target.value);
         }
       }}
-      className="w-full rounded-lg bg-[var(--color-surface-2)] px-3 py-2.5 text-sm outline-none"
+      className="w-full rounded-lg border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 py-2.5 text-sm outline-none"
     >
       <option value="" disabled>
         Select category

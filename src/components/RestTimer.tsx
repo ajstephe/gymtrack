@@ -33,10 +33,8 @@ export function RestTimer() {
   return (
     <div className="fixed inset-x-0 bottom-[64px] z-40 mx-auto max-w-[560px] px-3 pb-2">
       <div
-        className={`relative overflow-hidden rounded-2xl border shadow-lg backdrop-blur ${
-          isDone
-            ? 'border-[var(--color-lime)]/50 bg-[var(--color-lime)]/15'
-            : 'border-[var(--color-border)] bg-[var(--color-surface)]/95'
+        className={`card-bevel relative overflow-hidden rounded-2xl border-2 border-[var(--color-border)] ${
+          isDone ? 'bg-[var(--color-lime)]' : 'bg-[var(--color-surface)]'
         }`}
       >
         <div
@@ -48,7 +46,7 @@ export function RestTimer() {
             <div className="text-[11px] uppercase tracking-wide text-[var(--color-text-faint)]">
               {isDone ? 'Rest done' : `Resting${label ? ` · ${label}` : ''}`}
             </div>
-            <div className={`font-mono text-2xl font-semibold tabular-nums ${isDone ? 'text-[var(--color-lime)]' : ''}`}>
+            <div className={`font-mono text-2xl font-semibold tabular-nums ${isDone ? 'text-[var(--color-text)]' : ''}`}>
               {isDone ? 'GO' : formatDuration(remainingSec)}
             </div>
           </div>
@@ -56,14 +54,14 @@ export function RestTimer() {
             <div className="flex items-center gap-1.5">
               <button
                 onClick={() => addSeconds(-15)}
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-surface-2)] active:scale-95"
+                className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] active:scale-95"
                 aria-label="Subtract 15 seconds"
               >
                 <Minus size={16} />
               </button>
               <button
                 onClick={() => addSeconds(15)}
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-surface-2)] active:scale-95"
+                className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] active:scale-95"
                 aria-label="Add 15 seconds"
               >
                 <Plus size={16} />
@@ -72,7 +70,7 @@ export function RestTimer() {
           )}
           <button
             onClick={stop}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-surface-2)] active:scale-95"
+            className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] active:scale-95"
             aria-label="Dismiss timer"
           >
             <X size={16} />

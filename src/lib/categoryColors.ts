@@ -1,10 +1,13 @@
+// Dedicated hex values (not the shared button/accent tokens) so every category
+// reads clearly as text/dot color against the light poster-paper background —
+// the bright button-lime in particular is too light to use directly as text.
 const PALETTE = [
-  'var(--color-crimson)',
-  'var(--color-azure)',
-  'var(--color-lime)',
-  'var(--color-amber)',
-  'var(--color-primary)',
-  'var(--color-primary-2)',
+  '#ff3d80', // crimson / hot pink
+  '#1a8fb4', // azure / blue-teal
+  '#7c9a1e', // lime, darkened for legibility as text
+  '#c2540a', // amber, darkened toward burnt orange
+  '#00897f', // primary teal
+  '#7b2cbf', // primary-2 purple
 ];
 
 /** Deterministic per-category color so e.g. "Chest" is always the same color everywhere. */

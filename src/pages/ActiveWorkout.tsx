@@ -225,7 +225,7 @@ export function ActiveWorkout() {
         <div className="flex flex-col items-end gap-1.5">
           <button
             onClick={finishWorkout}
-            className="btn-glow-primary rounded-xl px-4 py-2.5 text-sm font-semibold text-white active:scale-[0.96]"
+            className="btn-glow-pink rounded-xl px-4 py-2.5 text-sm active:scale-[0.96]"
           >
             Finish
           </button>
@@ -264,7 +264,7 @@ export function ActiveWorkout() {
                   <div
                     key={ex.id}
                     id={`ex-${ex.id}`}
-                    className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] transition-colors"
+                    className="card-bevel overflow-hidden rounded-2xl border-2 border-[var(--color-border)] bg-[var(--color-surface)] transition-colors"
                   >
                     <button
                       onClick={() => setExpandedId(isOpen ? null : ex.id)}
@@ -275,7 +275,7 @@ export function ActiveWorkout() {
                         <div className="flex items-center gap-2">
                           <span className="truncate font-medium">{ex.name}</span>
                           {logged.length > 0 && (
-                            <span className="shrink-0 rounded-full bg-[var(--color-lime)]/15 px-2 py-0.5 text-[10px] font-semibold text-[var(--color-lime)]">
+                            <span className="shrink-0 rounded-full bg-[var(--color-lime)] px-2 py-0.5 text-[10px] font-semibold text-[var(--color-text)]">
                               {logged.length} set{logged.length > 1 ? 's' : ''}
                             </span>
                           )}
@@ -417,7 +417,7 @@ export function ActiveWorkout() {
                                 {ex.unit === 'bodyweight' ? 'Weight (opt.)' : ex.unit === 'stack' ? 'Stack #' : 'Weight'}
                               </span>
                               {(ex.unit === 'kg' || ex.unit === 'lb') && (
-                                <span className="flex overflow-hidden rounded-full">
+                                <span className="flex overflow-hidden rounded-full border-2 border-[var(--color-border)]">
                                   {(['kg', 'lb'] as const).map((u) => (
                                     <button
                                       key={u}
@@ -441,7 +441,7 @@ export function ActiveWorkout() {
                               value={draft.weight}
                               onChange={(e) => updateDraft(ex.id, { weight: e.target.value })}
                               placeholder="0"
-                              className="w-full rounded-xl bg-[var(--color-surface-2)] px-3 py-2.5 text-lg font-semibold outline-none"
+                              className="w-full rounded-xl border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 py-2.5 font-mono text-xl font-bold outline-none"
                             />
                           </label>
                           <label className="flex-1">
@@ -454,7 +454,7 @@ export function ActiveWorkout() {
                               value={draft.reps}
                               onChange={(e) => updateDraft(ex.id, { reps: e.target.value })}
                               placeholder="0"
-                              className="w-full rounded-xl bg-[var(--color-surface-2)] px-3 py-2.5 text-lg font-semibold outline-none"
+                              className="w-full rounded-xl border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 py-2.5 font-mono text-xl font-bold outline-none"
                             />
                           </label>
                         </div>
@@ -462,9 +462,9 @@ export function ActiveWorkout() {
                         <div className="mb-2 flex items-center gap-2">
                           <button
                             onClick={() => updateDraft(ex.id, { warmup: !draft.warmup })}
-                            className={`flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition active:scale-95 ${
+                            className={`flex shrink-0 items-center gap-1 rounded-full border-2 border-[var(--color-border)] px-2.5 py-1 text-xs font-medium transition active:scale-95 ${
                               draft.warmup
-                                ? 'bg-[var(--color-amber)] text-[var(--color-bg)]'
+                                ? 'bg-[var(--color-amber)] text-[var(--color-text)]'
                                 : 'bg-[var(--color-surface-2)] text-[var(--color-text-dim)]'
                             }`}
                           >
@@ -473,7 +473,7 @@ export function ActiveWorkout() {
                           <button
                             type="button"
                             onClick={() => setOptionsOpen((o) => !o)}
-                            className="ml-auto flex shrink-0 items-center gap-1.5 rounded-full bg-[var(--color-surface-2)] px-2.5 py-1 text-xs font-medium text-[var(--color-text-dim)] transition active:scale-95"
+                            className="ml-auto flex shrink-0 items-center gap-1.5 rounded-full border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] px-2.5 py-1 text-xs font-medium text-[var(--color-text-dim)] transition active:scale-95"
                           >
                             <SlidersHorizontal size={12} />
                             Options
@@ -489,33 +489,43 @@ export function ActiveWorkout() {
 
                         <Collapse open={optionsOpen}>
                           <div className="pb-3">
-                            <div className="mb-2.5 flex items-center gap-1.5 overflow-x-auto scrollbar-none">
-                              <span className="shrink-0 text-[10px] uppercase tracking-wide text-[var(--color-text-faint)]">
-                                RPE
-                              </span>
-                              <button
-                                onClick={() => updateDraft(ex.id, { rpe: '' })}
-                                className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium transition active:scale-95 ${
-                                  draft.rpe === ''
-                                    ? 'bg-[var(--color-primary)] text-white'
-                                    : 'bg-[var(--color-surface-2)] text-[var(--color-text-dim)]'
-                                }`}
-                              >
-                                –
-                              </button>
-                              {RPE_OPTIONS.map((r) => (
-                                <button
-                                  key={r}
-                                  onClick={() => updateDraft(ex.id, { rpe: String(r) })}
-                                  className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium transition active:scale-95 ${
-                                    draft.rpe === String(r)
-                                      ? 'bg-[var(--color-primary)] text-white'
-                                      : 'bg-[var(--color-surface-2)] text-[var(--color-text-dim)]'
-                                  }`}
-                                >
-                                  {trimNum(r)}
-                                </button>
-                              ))}
+                            <div className="mb-3">
+                              <div className="mb-1.5 flex items-center justify-between">
+                                <span className="text-[10px] uppercase tracking-wide text-[var(--color-text-faint)]">
+                                  Intensity-o-meter{draft.rpe !== '' ? ` — RPE ${trimNum(parseFloat(draft.rpe))}` : ''}
+                                </span>
+                                {draft.rpe !== '' && (
+                                  <button
+                                    onClick={() => updateDraft(ex.id, { rpe: '' })}
+                                    className="text-[10px] font-bold uppercase text-[var(--color-text-faint)] underline active:text-[var(--color-danger)]"
+                                  >
+                                    Clear
+                                  </button>
+                                )}
+                              </div>
+                              <div className="relative h-5 overflow-hidden rounded-full border-2 border-[var(--color-border)] bg-[var(--color-surface-2)]">
+                                <div
+                                  className="absolute inset-y-0 left-0 transition-[width]"
+                                  style={{
+                                    width:
+                                      draft.rpe !== ''
+                                        ? `${((RPE_OPTIONS.indexOf(parseFloat(draft.rpe)) + 1) / RPE_OPTIONS.length) * 100}%`
+                                        : '0%',
+                                    background:
+                                      'linear-gradient(90deg, var(--color-lime), var(--color-amber), var(--color-crimson))',
+                                  }}
+                                />
+                                <div className="absolute inset-0 flex">
+                                  {RPE_OPTIONS.map((r) => (
+                                    <button
+                                      key={r}
+                                      onClick={() => updateDraft(ex.id, { rpe: String(r) })}
+                                      aria-label={`RPE ${trimNum(r)}`}
+                                      className="flex-1 border-r-2 border-[var(--color-border)]/50 last:border-r-0 active:scale-y-90"
+                                    />
+                                  ))}
+                                </div>
+                              </div>
                             </div>
 
                             <div className="flex items-center gap-1.5">
@@ -526,7 +536,7 @@ export function ActiveWorkout() {
                                 <button
                                   key={p}
                                   onClick={() => setRestDuration(p)}
-                                  className={`rounded-full px-2.5 py-1 text-xs font-medium transition active:scale-95 ${
+                                  className={`rounded-full border-2 border-[var(--color-border)] px-2.5 py-1 text-xs font-medium transition active:scale-95 ${
                                     restDuration === p
                                       ? 'bg-[var(--color-primary)] text-white'
                                       : 'bg-[var(--color-surface-2)] text-[var(--color-text-dim)]'
@@ -542,7 +552,7 @@ export function ActiveWorkout() {
                         <button
                           onClick={() => logSet(ex)}
                           disabled={!draft.reps || (!draft.weight && ex.unit !== 'bodyweight')}
-                          className="btn-glow-lime flex w-full items-center justify-center gap-1.5 rounded-xl py-2.5 font-semibold text-[var(--color-bg)] active:scale-[0.98] disabled:opacity-40 disabled:shadow-none"
+                          className="btn-glow-lime flex w-full items-center justify-center gap-1.5 rounded-xl py-2.5 active:scale-[0.98] disabled:opacity-40 disabled:shadow-none"
                         >
                           <Check size={17} strokeWidth={3} /> Log Set
                         </button>
@@ -584,7 +594,7 @@ export function ActiveWorkout() {
           onClick={() => setShowAddExercise(false)}
         >
           <div
-            className="w-full max-w-[560px] rounded-t-3xl border-t border-[var(--color-border)] bg-[var(--color-surface)] p-4"
+            className="w-full max-w-[560px] rounded-t-3xl border-t-[3px] border-[var(--color-border)] bg-[var(--color-surface)] p-4"
             style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 16px)' }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -604,7 +614,7 @@ export function ActiveWorkout() {
                 value={newExForm.name}
                 onChange={(e) => setNewExForm((f) => ({ ...f, name: e.target.value }))}
                 placeholder="Exercise name"
-                className="rounded-lg bg-[var(--color-surface-2)] px-3 py-2.5 text-sm outline-none"
+                className="rounded-lg border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 py-2.5 text-sm outline-none"
               />
               <CategorySelect
                 categories={categories.map((c) => c.category)}
@@ -615,12 +625,12 @@ export function ActiveWorkout() {
                 value={newExForm.setupNote}
                 onChange={(e) => setNewExForm((f) => ({ ...f, setupNote: e.target.value }))}
                 placeholder="Setup note (seat/pin, optional)"
-                className="rounded-lg bg-[var(--color-surface-2)] px-3 py-2.5 text-sm outline-none"
+                className="rounded-lg border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 py-2.5 text-sm outline-none"
               />
               <select
                 value={newExForm.unit}
                 onChange={(e) => setNewExForm((f) => ({ ...f, unit: e.target.value as WeightUnit }))}
-                className="rounded-lg bg-[var(--color-surface-2)] px-3 py-2.5 text-sm outline-none"
+                className="rounded-lg border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 py-2.5 text-sm outline-none"
               >
                 {UNIT_OPTIONS.map((u) => (
                   <option key={u.value} value={u.value}>
@@ -631,7 +641,7 @@ export function ActiveWorkout() {
               <button
                 onClick={addExerciseOnTheFly}
                 disabled={!newExForm.name.trim()}
-                className="mt-1 rounded-lg bg-[var(--color-primary)] py-2.5 text-sm font-semibold text-white transition active:scale-[0.98] disabled:opacity-40"
+                className="btn-glow-primary mt-1 rounded-lg py-2.5 text-sm transition active:scale-[0.98] disabled:opacity-40 disabled:shadow-none"
               >
                 Add to Workout
               </button>

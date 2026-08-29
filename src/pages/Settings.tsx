@@ -70,7 +70,7 @@ export function Settings() {
 
       <h1 className="mb-5 text-2xl font-bold">Settings</h1>
 
-      <div className="mb-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+      <div className="mb-4 rounded-2xl border-2 border-[var(--color-border)] bg-[var(--color-surface)] p-4">
         <h2 className="mb-2 text-sm font-semibold text-[var(--color-text-dim)]">Storage</h2>
         <div className="mb-3 flex items-center gap-2.5">
           {persisted ? (
@@ -96,7 +96,7 @@ export function Settings() {
         )}
       </div>
 
-      <div className="mb-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+      <div className="mb-4 rounded-2xl border-2 border-[var(--color-border)] bg-[var(--color-surface)] p-4">
         <h2 className="mb-1 text-sm font-semibold text-[var(--color-text-dim)]">Backup</h2>
         <p className="mb-3 text-xs text-[var(--color-text-faint)]">
           {exerciseCount} exercises · {sessionCount} workouts · {setCount} sets · {photoCount} photos
@@ -109,14 +109,14 @@ export function Settings() {
           <button
             onClick={handleExport}
             disabled={busy != null}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-[var(--color-primary)] py-2.5 text-sm font-semibold text-white disabled:opacity-40"
+            className="btn-glow-primary flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2.5 text-sm disabled:opacity-40 disabled:shadow-none"
           >
             <Download size={15} /> {busy === 'export' ? 'Exporting…' : 'Export'}
           </button>
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={busy != null}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-[var(--color-surface-2)] py-2.5 text-sm font-semibold disabled:opacity-40"
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] py-2.5 text-sm font-semibold disabled:opacity-40"
           >
             <Upload size={15} /> {busy === 'import' ? 'Importing…' : 'Import'}
           </button>

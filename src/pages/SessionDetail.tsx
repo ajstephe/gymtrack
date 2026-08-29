@@ -66,15 +66,15 @@ export function SessionDetail() {
       </p>
 
       <div className="mb-5 grid grid-cols-3 gap-2">
-        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3 text-center">
+        <div className="rounded-xl border-2 border-[var(--color-border)] bg-[var(--color-surface)] p-3 text-center">
           <div className="text-lg font-bold">{durationMin ?? '–'}</div>
           <div className="text-[10px] uppercase text-[var(--color-text-faint)]">Minutes</div>
         </div>
-        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3 text-center">
+        <div className="rounded-xl border-2 border-[var(--color-border)] bg-[var(--color-surface)] p-3 text-center">
           <div className="text-lg font-bold">{sets.length}</div>
           <div className="text-[10px] uppercase text-[var(--color-text-faint)]">Sets</div>
         </div>
-        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3 text-center">
+        <div className="rounded-xl border-2 border-[var(--color-border)] bg-[var(--color-surface)] p-3 text-center">
           <div className="text-lg font-bold">{formatVolume(volume)}</div>
           <div className="text-[10px] uppercase text-[var(--color-text-faint)]">Volume</div>
         </div>
@@ -84,7 +84,7 @@ export function SessionDetail() {
         {[...grouped.entries()].map(([exId, exSets]) => {
           const ex = exerciseById.get(exId);
           return (
-            <div key={exId} className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3.5">
+            <div key={exId} className="rounded-2xl border-2 border-[var(--color-border)] bg-[var(--color-surface)] p-3.5">
               <Link to={`/exercises/${exId}`} className="mb-2 block font-medium">
                 {ex?.name ?? 'Exercise'}
               </Link>

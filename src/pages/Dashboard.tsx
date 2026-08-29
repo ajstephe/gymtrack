@@ -68,7 +68,7 @@ export function Dashboard() {
       {activeSession ? (
         <Link
           to={`/workout/${activeSession.id}`}
-          className="mb-5 flex items-center justify-between rounded-2xl border border-[var(--color-primary)]/40 bg-[var(--color-primary)]/12 px-4 py-3.5 transition active:scale-[0.98]"
+          className="card-bevel mb-5 flex items-center justify-between rounded-2xl border-2 border-[var(--color-border)] bg-[var(--color-primary)]/12 px-4 py-3.5 transition active:scale-[0.98]"
         >
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-primary)]">
@@ -84,7 +84,7 @@ export function Dashboard() {
       ) : (
         <Link
           to="/train"
-          className="btn-glow-primary mb-5 flex items-center justify-between rounded-2xl px-4 py-3.5 font-semibold text-white active:scale-[0.98]"
+          className="btn-glow-lime mb-5 flex items-center justify-between rounded-2xl px-4 py-3.5 font-display text-[var(--color-text)] active:scale-[0.98]"
         >
           Start Workout
           <ChevronRight size={20} />
@@ -100,14 +100,14 @@ export function Dashboard() {
           accent="var(--color-amber)"
         />
         <StatCard
-          label="This week"
+          label="This wk"
           value={formatVolume(thisWeek)}
           sub={delta == null ? 'volume' : `${delta >= 0 ? '+' : ''}${delta}% wk`}
           icon={<TrendingUp size={16} />}
           accent="var(--color-lime)"
         />
         <StatCard
-          label="This month"
+          label="This mo"
           value={`${workoutsThisMonth}`}
           sub="workouts"
           icon={<CalendarCheck size={16} />}
@@ -115,7 +115,7 @@ export function Dashboard() {
         />
       </div>
 
-      <div className="mb-5 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+      <div className="card-bevel mb-5 rounded-2xl border-2 border-[var(--color-border)] bg-[var(--color-surface)] p-4">
         <div className="mb-2 flex items-center justify-between">
           <h2 className="text-sm font-semibold text-[var(--color-text-dim)]">Weekly Volume</h2>
         </div>
@@ -149,7 +149,7 @@ export function Dashboard() {
         )}
       </div>
 
-      <div className="mb-5 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+      <div className="card-bevel mb-5 rounded-2xl border-2 border-[var(--color-border)] bg-[var(--color-surface)] p-4">
         <div className="mb-2 flex items-center justify-between">
           <h2 className="flex items-center gap-1.5 text-sm font-semibold text-[var(--color-text-dim)]">
             <Scale size={14} />
@@ -230,7 +230,7 @@ export function Dashboard() {
                 <Link
                   key={`${pr.exerciseId}-${pr.achievedAt}`}
                   to={`/exercises/${pr.exerciseId}`}
-                  className="flex items-center justify-between rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-2.5 transition active:scale-[0.98]"
+                  className="card-bevel flex items-center justify-between rounded-xl border-2 border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-2.5 transition active:scale-[0.98]"
                 >
                   <div>
                     <div className="text-sm font-medium">{ex?.name ?? 'Exercise'}</div>

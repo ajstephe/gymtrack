@@ -103,7 +103,7 @@ export function ExerciseLibrary() {
           <button
             key={r.id}
             onClick={() => setRoutineId(r.id)}
-            className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm font-medium transition active:scale-95 ${
+            className={`shrink-0 rounded-full border-2 border-[var(--color-border)] px-3.5 py-1.5 text-sm font-medium transition active:scale-95 ${
               activeRoutineId === r.id
                 ? 'bg-[var(--color-primary)] text-white'
                 : 'bg-[var(--color-surface)] text-[var(--color-text-dim)]'
@@ -114,7 +114,7 @@ export function ExerciseLibrary() {
         ))}
       </div>
 
-      <div className="mb-4 flex items-center gap-2 rounded-xl bg-[var(--color-surface)] px-3 py-2.5">
+      <div className="mb-4 flex items-center gap-2 rounded-xl border-2 border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2.5">
         <Search size={16} className="text-[var(--color-text-faint)]" />
         <input
           value={query}
@@ -143,7 +143,7 @@ export function ExerciseLibrary() {
                 {items.map((ex) => (
                   <div
                     key={ex.id}
-                    className="flex items-center rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] pr-1.5 transition active:scale-[0.99]"
+                    className="card-bevel flex items-center rounded-xl border-2 border-[var(--color-border)] bg-[var(--color-surface)] pr-1.5 transition active:scale-[0.99]"
                   >
                     <Link to={`/exercises/${ex.id}`} className="flex min-w-0 flex-1 items-center gap-3 px-3.5 py-2.5">
                       <ExercisePhotoThumb exerciseId={ex.id} size={36} />
@@ -175,13 +175,13 @@ export function ExerciseLibrary() {
       {activeRoutineId && (
         <div className="pb-4">
           {showAdd ? (
-            <div className="flex flex-col gap-2.5 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+            <div className="card-bevel flex flex-col gap-2.5 rounded-2xl border-2 border-[var(--color-border)] bg-[var(--color-surface)] p-4">
               <input
                 autoFocus
                 value={form.name}
                 onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
                 placeholder="Exercise name"
-                className="rounded-lg bg-[var(--color-surface-2)] px-3 py-2 text-sm outline-none"
+                className="rounded-lg border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 py-2 text-sm outline-none"
               />
               <CategorySelect
                 categories={allCategories}
@@ -192,12 +192,12 @@ export function ExerciseLibrary() {
                 value={form.setupNote}
                 onChange={(e) => setForm((f) => ({ ...f, setupNote: e.target.value }))}
                 placeholder="Setup note (seat/pin, optional)"
-                className="rounded-lg bg-[var(--color-surface-2)] px-3 py-2 text-sm outline-none"
+                className="rounded-lg border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 py-2 text-sm outline-none"
               />
               <select
                 value={form.unit}
                 onChange={(e) => setForm((f) => ({ ...f, unit: e.target.value as WeightUnit }))}
-                className="rounded-lg bg-[var(--color-surface-2)] px-3 py-2 text-sm outline-none"
+                className="rounded-lg border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 py-2 text-sm outline-none"
               >
                 {UNIT_OPTIONS.map((u) => (
                   <option key={u.value} value={u.value}>
@@ -208,13 +208,13 @@ export function ExerciseLibrary() {
               <div className="flex gap-2">
                 <button
                   onClick={() => setShowAdd(false)}
-                  className="flex-1 rounded-lg bg-[var(--color-surface-2)] py-2 text-sm font-medium transition active:scale-95"
+                  className="flex-1 rounded-lg border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] py-2 text-sm font-medium transition active:scale-95"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={addExercise}
-                  className="flex-1 rounded-lg bg-[var(--color-primary)] py-2 text-sm font-medium text-white transition active:scale-95"
+                  className="btn-glow-primary flex-1 rounded-lg py-2 text-sm transition active:scale-95"
                 >
                   Add
                 </button>
@@ -226,7 +226,7 @@ export function ExerciseLibrary() {
                 setForm((f) => ({ ...f, category: allCategories[0] ?? '' }));
                 setShowAdd(true);
               }}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-[var(--color-border)] px-4 py-3.5 text-sm text-[var(--color-text-dim)] transition active:scale-[0.98]"
+              className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[var(--color-border)] px-4 py-3.5 text-sm text-[var(--color-text-dim)] transition active:scale-[0.98]"
             >
               <Plus size={16} /> Add exercise to this gym
             </button>

@@ -30,7 +30,7 @@ export function LogBodyWeightSheet({
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60" onClick={onClose}>
       <div
-        className="w-full max-w-[560px] rounded-t-3xl border-t border-[var(--color-border)] bg-[var(--color-surface)] p-4"
+        className="w-full max-w-[560px] rounded-t-3xl border-t-[3px] border-[var(--color-border)] bg-[var(--color-surface)] p-4"
         style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 16px)' }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -48,9 +48,9 @@ export function LogBodyWeightSheet({
             value={weight}
             onChange={(e) => setWeight(e.target.value)}
             placeholder="0"
-            className="flex-1 rounded-xl bg-[var(--color-surface-2)] px-3 py-2.5 text-lg font-semibold outline-none"
+            className="flex-1 rounded-xl border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 py-2.5 font-mono text-lg font-bold outline-none"
           />
-          <span className="flex overflow-hidden rounded-xl">
+          <span className="flex overflow-hidden rounded-xl border-2 border-[var(--color-border)]">
             {(['kg', 'lb'] as const).map((u) => (
               <button
                 key={u}
@@ -68,7 +68,7 @@ export function LogBodyWeightSheet({
         <button
           onClick={save}
           disabled={!weight}
-          className="w-full rounded-xl bg-[var(--color-primary)] py-2.5 text-sm font-semibold text-white disabled:opacity-40"
+          className="btn-glow-primary w-full rounded-xl py-2.5 text-sm disabled:opacity-40 disabled:shadow-none"
         >
           Save
         </button>

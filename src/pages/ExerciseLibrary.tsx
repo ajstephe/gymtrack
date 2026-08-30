@@ -12,7 +12,7 @@ import { CategorySelect } from '../components/CategorySelect';
 import { UNIT_OPTIONS } from '../lib/unitOptions';
 
 export function ExerciseLibrary() {
-  const routines = useLiveQuery(() => db.routines.toArray(), []) ?? [];
+  const routines = useLiveQuery(async () => (await db.routines.toArray()).filter((r) => !r.archived), []) ?? [];
   const [routineId, setRoutineId] = useState<string | null>(null);
   const activeRoutineId = routineId ?? routines[0]?.id ?? null;
 

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Plus, Minus, X } from 'lucide-react';
 import { useRestTimerStore, playRestDoneChime } from '../store/restTimerStore';
 import { formatDuration } from '../lib/format';
+import { notifyRestDone } from '../lib/notifications';
 
 export function RestTimer() {
   const { endsAt, duration, label, addSeconds, stop } = useRestTimerStore();
@@ -18,12 +19,13 @@ export function RestTimer() {
       if (remaining <= 0 && !chimedRef.current) {
         chimedRef.current = true;
         playRestDoneChime();
+        notifyRestDone(label);
       }
     };
     tick();
     const id = setInterval(tick, 250);
     return () => clearInterval(id);
-  }, [endsAt]);
+  }, [endsAt, label]);
 
   if (endsAt == null) return null;
 

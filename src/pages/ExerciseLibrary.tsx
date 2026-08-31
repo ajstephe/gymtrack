@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Link } from 'react-router-dom';
-import { Search, Plus, ChevronRight, Trash2 } from 'lucide-react';
+import { Search, Plus, ChevronRight, ChevronUp, ChevronDown, Trash2 } from 'lucide-react';
 import { db, newId } from '../data/db';
 import type { Exercise, WeightUnit } from '../data/types';
 import { EmptyState } from '../components/EmptyState';
@@ -91,6 +91,14 @@ export function ExerciseLibrary() {
     await db.exercises.update(ex.id, { archived: true });
   }
 
+  async function moveExercise(items: Exercise[], index: number, direction: -1 | 1) {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= items.length) return;
+    const a = items[index];
+    const b = items[targetIndex];
+    await Promise.all([db.exercises.update(a.id, { order: b.order }), db.exercises.update(b.id, { order: a.order })]);
+  }
+
   return (
     <div className="px-4 pt-6">
       <h1 className="mb-4 text-2xl font-bold">Exercises</h1>
@@ -140,7 +148,7 @@ export function ExerciseLibrary() {
               />
               <Collapse open={!isCollapsed}>
               <div className="flex flex-col gap-1.5">
-                {items.map((ex) => (
+                {items.map((ex, i) => (
                   <div
                     key={ex.id}
                     className="card-bevel flex items-center rounded-xl border-2 border-[var(--color-border)] bg-[var(--color-surface)] pr-1.5 transition active:scale-[0.99]"
@@ -155,6 +163,26 @@ export function ExerciseLibrary() {
                       </div>
                       <ChevronRight size={16} className="shrink-0 text-[var(--color-text-faint)]" />
                     </Link>
+                    {!query.trim() && (
+                      <div className="flex shrink-0 flex-col">
+                        <button
+                          onClick={() => moveExercise(items, i, -1)}
+                          disabled={i === 0}
+                          className="rounded p-1 text-[var(--color-text-faint)] transition active:scale-90 disabled:opacity-20"
+                          aria-label={`Move ${ex.name} up`}
+                        >
+                          <ChevronUp size={14} />
+                        </button>
+                        <button
+                          onClick={() => moveExercise(items, i, 1)}
+                          disabled={i === items.length - 1}
+                          className="rounded p-1 text-[var(--color-text-faint)] transition active:scale-90 disabled:opacity-20"
+                          aria-label={`Move ${ex.name} down`}
+                        >
+                          <ChevronDown size={14} />
+                        </button>
+                      </div>
+                    )}
                     <button
                       onClick={() => removeExercise(ex)}
                       className="shrink-0 rounded-lg p-2 text-[var(--color-text-faint)] transition active:scale-90 active:text-[var(--color-danger)]"

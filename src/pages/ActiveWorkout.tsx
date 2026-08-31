@@ -1,13 +1,26 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { ChevronDown, Trash2, Check, X, Flame, Plus, Scale, SlidersHorizontal } from 'lucide-react';
+import {
+  ChevronDown,
+  Trash2,
+  Check,
+  X,
+  Flame,
+  Plus,
+  Scale,
+  SlidersHorizontal,
+  Repeat,
+  StickyNote,
+  Search,
+} from 'lucide-react';
 import { db, newId } from '../data/db';
 import { useSessionStore } from '../store/sessionStore';
 import { useRestTimerStore } from '../store/restTimerStore';
 import { formatWeight, formatDuration, trimNum } from '../lib/format';
 import { workingSets, suggestNextTarget } from '../lib/calculations';
 import { UNIT_OPTIONS } from '../lib/unitOptions';
+import { canPlateCalc, plateBreakdown } from '../lib/plates';
 import { ExercisePhotoThumb, ExercisePhotoButton } from '../components/ExercisePhoto';
 import { CategoryHeader } from '../components/CategoryHeader';
 import { CategorySelect } from '../components/CategorySelect';
@@ -58,6 +71,11 @@ export function ActiveWorkout() {
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
   const categoriesInitialized = useRef(false);
   const [optionsOpen, setOptionsOpen] = useState(false);
+  const [editingSetId, setEditingSetId] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState({ weight: '', reps: '', rpe: '' });
+  const [showNotes, setShowNotes] = useState(false);
+  const [notesDraft, setNotesDraft] = useState('');
+  const [exerciseQuery, setExerciseQuery] = useState('');
 
   useEffect(() => {
     if (!session || session.endedAt) return;
@@ -80,6 +98,14 @@ export function ActiveWorkout() {
     }
     return order.map((cat) => ({ category: cat, exercises: map.get(cat)! }));
   }, [exercises]);
+
+  const visibleCategories = useMemo(() => {
+    const q = exerciseQuery.trim().toLowerCase();
+    if (!q) return categories;
+    return categories
+      .map((c) => ({ category: c.category, exercises: c.exercises.filter((e) => e.name.toLowerCase().includes(q)) }))
+      .filter((c) => c.exercises.length > 0);
+  }, [categories, exerciseQuery]);
 
   useEffect(() => {
     if (!categoriesInitialized.current && categories.length > 0) {
@@ -159,7 +185,48 @@ export function ActiveWorkout() {
   }
 
   async function deleteSet(setId: string) {
+    if (!confirm('Delete this set? This cannot be undone.')) return;
     await db.sets.delete(setId);
+    if (editingSetId === setId) setEditingSetId(null);
+  }
+
+  function startEditSet(s: SetEntry) {
+    setEditingSetId(s.id);
+    setEditDraft({ weight: String(s.weight), reps: String(s.reps), rpe: s.rpe != null ? String(s.rpe) : '' });
+  }
+
+  async function saveEditSet(s: SetEntry) {
+    const weight = editDraft.weight ? parseFloat(editDraft.weight) : s.unit === 'bodyweight' ? 0 : NaN;
+    const reps = parseInt(editDraft.reps, 10);
+    if (Number.isNaN(weight) || Number.isNaN(reps)) return;
+    await db.sets.update(s.id, { weight, reps, rpe: editDraft.rpe ? parseFloat(editDraft.rpe) : undefined });
+    setEditingSetId(null);
+  }
+
+  async function quickRepeatSet(ex: Exercise) {
+    if (!sessionId) return;
+    const logged = setsByExercise.get(ex.id) ?? [];
+    const last = logged[logged.length - 1];
+    if (!last) return;
+    await db.sets.add({
+      id: newId('set'),
+      sessionId,
+      exerciseId: ex.id,
+      setNumber: logged.length + 1,
+      weight: last.weight,
+      reps: last.reps,
+      unit: last.unit,
+      isWarmup: last.isWarmup,
+      rpe: last.rpe,
+      completedAt: new Date().toISOString(),
+    });
+    startTimer(restDuration, ex.name);
+  }
+
+  async function saveNotes() {
+    if (!sessionId) return;
+    await db.sessions.update(sessionId, { notes: notesDraft.trim() || undefined });
+    setShowNotes(false);
   }
 
   async function setUnit(exId: string, unit: 'kg' | 'lb') {
@@ -235,19 +302,48 @@ export function ActiveWorkout() {
           >
             <Scale size={12} /> Log weight
           </button>
+          <button
+            onClick={() => {
+              setNotesDraft(session.notes ?? '');
+              setShowNotes(true);
+            }}
+            className="flex items-center gap-1 text-xs font-medium text-[var(--color-text-faint)] transition active:scale-95"
+          >
+            <StickyNote size={12} /> {session.notes ? 'Notes' : 'Add note'}
+            {session.notes && <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-primary)]" />}
+          </button>
         </div>
       </div>
 
+      {exercises && exercises.length > 6 && (
+        <div className="mb-4 flex items-center gap-2 rounded-xl border-2 border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2.5">
+          <Search size={16} className="text-[var(--color-text-faint)]" />
+          <input
+            value={exerciseQuery}
+            onChange={(e) => setExerciseQuery(e.target.value)}
+            placeholder="Find an exercise"
+            className="flex-1 bg-transparent text-sm outline-none placeholder:text-[var(--color-text-faint)]"
+          />
+          {exerciseQuery && (
+            <button onClick={() => setExerciseQuery('')} className="text-[var(--color-text-faint)]" aria-label="Clear search">
+              <X size={14} />
+            </button>
+          )}
+        </div>
+      )}
+
       <div className="flex flex-col gap-5 pb-24">
-        {categories.map(({ category, exercises: exList }) => (
+        {visibleCategories.map(({ category, exercises: exList }) => {
+          const isCollapsed = !exerciseQuery.trim() && collapsedCategories.has(category);
+          return (
           <div key={category}>
             <CategoryHeader
               category={category}
               count={exList.length}
-              collapsed={collapsedCategories.has(category)}
+              collapsed={isCollapsed}
               onToggle={() => toggleCategory(category)}
             />
-            <Collapse open={!collapsedCategories.has(category)}>
+            <Collapse open={!isCollapsed}>
             <div className="flex flex-col gap-2">
               {exList.map((ex) => {
                 const logged = setsByExercise.get(ex.id) ?? [];
@@ -266,36 +362,47 @@ export function ActiveWorkout() {
                     id={`ex-${ex.id}`}
                     className="card-bevel overflow-hidden rounded-2xl border-2 border-[var(--color-border)] bg-[var(--color-surface)] transition-colors"
                   >
-                    <button
-                      onClick={() => setExpandedId(isOpen ? null : ex.id)}
-                      className="flex w-full items-center gap-3 px-4 py-3 text-left transition active:bg-[var(--color-surface-2)]"
-                    >
-                      <ExercisePhotoThumb exerciseId={ex.id} size={36} />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="truncate font-medium">{ex.name}</span>
-                          {logged.length > 0 && (
-                            <span className="shrink-0 rounded-full bg-[var(--color-lime)] px-2 py-0.5 text-[10px] font-semibold text-[var(--color-text)]">
-                              {logged.length} set{logged.length > 1 ? 's' : ''}
-                            </span>
-                          )}
+                    <div className="flex items-center">
+                      <button
+                        onClick={() => setExpandedId(isOpen ? null : ex.id)}
+                        className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3 text-left transition active:bg-[var(--color-surface-2)]"
+                      >
+                        <ExercisePhotoThumb exerciseId={ex.id} size={36} />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="truncate font-medium">{ex.name}</span>
+                            {logged.length > 0 && (
+                              <span className="shrink-0 rounded-full bg-[var(--color-lime)] px-2 py-0.5 text-[10px] font-semibold text-[var(--color-text)]">
+                                {logged.length} set{logged.length > 1 ? 's' : ''}
+                              </span>
+                            )}
+                          </div>
+                          <div className="truncate text-xs text-[var(--color-text-faint)]">
+                            {ex.setupNote && <span>{ex.setupNote} · </span>}
+                            {lastTop ? (
+                              <span>
+                                Last: {formatWeight(lastTop.weight, ex.unit)} × {lastTop.reps}
+                              </span>
+                            ) : (
+                              <span>No history yet</span>
+                            )}
+                          </div>
                         </div>
-                        <div className="truncate text-xs text-[var(--color-text-faint)]">
-                          {ex.setupNote && <span>{ex.setupNote} · </span>}
-                          {lastTop ? (
-                            <span>
-                              Last: {formatWeight(lastTop.weight, ex.unit)} × {lastTop.reps}
-                            </span>
-                          ) : (
-                            <span>No history yet</span>
-                          )}
-                        </div>
-                      </div>
-                      <ChevronDown
-                        size={18}
-                        className={`ml-2 shrink-0 text-[var(--color-text-faint)] transition-transform ${isOpen ? 'rotate-180' : ''}`}
-                      />
-                    </button>
+                        <ChevronDown
+                          size={18}
+                          className={`ml-2 shrink-0 text-[var(--color-text-faint)] transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                        />
+                      </button>
+                      {logged.length > 0 && !isOpen && (
+                        <button
+                          onClick={() => quickRepeatSet(ex)}
+                          className="mr-3 shrink-0 rounded-full border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] p-2 text-[var(--color-text-dim)] transition active:scale-90"
+                          aria-label={`Repeat last set for ${ex.name}`}
+                        >
+                          <Repeat size={15} />
+                        </button>
+                      )}
+                    </div>
 
                     <Collapse open={isOpen}>
                       <div
@@ -374,35 +481,96 @@ export function ActiveWorkout() {
                               let workingIndex = 0;
                               return logged.map((s) => {
                                 if (!s.isWarmup) workingIndex++;
+                                const label = s.isWarmup ? 'Warm-up' : `Set ${workingIndex}`;
+                                const isEditing = editingSetId === s.id;
                                 return (
                                   <div
                                     key={s.id}
-                                    className="flex items-center justify-between rounded-lg bg-[var(--color-surface-2)] px-3 py-1.5 text-sm"
+                                    className="flex items-center gap-2 rounded-lg bg-[var(--color-surface-2)] px-3 py-1.5 text-sm"
                                   >
-                                    <span
-                                      className={
-                                        s.isWarmup
-                                          ? 'font-medium text-[var(--color-amber)]'
-                                          : 'text-[var(--color-text-faint)]'
-                                      }
-                                    >
-                                      {s.isWarmup ? 'Warm-up' : `Set ${workingIndex}`}
-                                    </span>
-                                    <span className="font-medium tabular-nums">
-                                      {formatWeight(s.weight, s.unit)} × {s.reps}
-                                      {s.rpe != null && (
-                                        <span className="ml-1.5 font-normal text-[var(--color-text-faint)]">
-                                          RPE {trimNum(s.rpe)}
+                                    {isEditing ? (
+                                      <>
+                                        <span
+                                          className={`shrink-0 ${s.isWarmup ? 'font-medium text-[var(--color-amber)]' : 'text-[var(--color-text-faint)]'}`}
+                                        >
+                                          {label}
                                         </span>
-                                      )}
-                                    </span>
-                                    <button
-                                      onClick={() => deleteSet(s.id)}
-                                      className="text-[var(--color-text-faint)] transition active:scale-90 active:text-[var(--color-danger)]"
-                                      aria-label="Delete set"
-                                    >
-                                      <Trash2 size={14} />
-                                    </button>
+                                        <input
+                                          autoFocus
+                                          type="number"
+                                          inputMode="decimal"
+                                          value={editDraft.weight}
+                                          onChange={(e) => setEditDraft((d) => ({ ...d, weight: e.target.value }))}
+                                          className="w-16 min-w-0 rounded-md border-2 border-[var(--color-border)] bg-[var(--color-surface)] px-1.5 py-1 text-center font-mono text-sm font-bold outline-none"
+                                        />
+                                        <span className="shrink-0 text-[var(--color-text-faint)]">×</span>
+                                        <input
+                                          type="number"
+                                          inputMode="numeric"
+                                          value={editDraft.reps}
+                                          onChange={(e) => setEditDraft((d) => ({ ...d, reps: e.target.value }))}
+                                          className="w-12 min-w-0 rounded-md border-2 border-[var(--color-border)] bg-[var(--color-surface)] px-1.5 py-1 text-center font-mono text-sm font-bold outline-none"
+                                        />
+                                        <select
+                                          value={editDraft.rpe}
+                                          onChange={(e) => setEditDraft((d) => ({ ...d, rpe: e.target.value }))}
+                                          className="min-w-0 rounded-md border-2 border-[var(--color-border)] bg-[var(--color-surface)] px-1 py-1 text-xs outline-none"
+                                        >
+                                          <option value="">RPE</option>
+                                          {RPE_OPTIONS.map((r) => (
+                                            <option key={r} value={r}>
+                                              {trimNum(r)}
+                                            </option>
+                                          ))}
+                                        </select>
+                                        <button
+                                          onClick={() => saveEditSet(s)}
+                                          className="ml-auto shrink-0 text-[var(--color-primary)] transition active:scale-90"
+                                          aria-label="Save set"
+                                        >
+                                          <Check size={16} strokeWidth={3} />
+                                        </button>
+                                        <button
+                                          onClick={() => setEditingSetId(null)}
+                                          className="shrink-0 text-[var(--color-text-faint)] transition active:scale-90"
+                                          aria-label="Cancel edit"
+                                        >
+                                          <X size={16} />
+                                        </button>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <button
+                                          onClick={() => startEditSet(s)}
+                                          className="flex min-w-0 flex-1 items-center justify-between text-left"
+                                        >
+                                          <span
+                                            className={
+                                              s.isWarmup
+                                                ? 'font-medium text-[var(--color-amber)]'
+                                                : 'text-[var(--color-text-faint)]'
+                                            }
+                                          >
+                                            {label}
+                                          </span>
+                                          <span className="font-medium tabular-nums">
+                                            {formatWeight(s.weight, s.unit)} × {s.reps}
+                                            {s.rpe != null && (
+                                              <span className="ml-1.5 font-normal text-[var(--color-text-faint)]">
+                                                RPE {trimNum(s.rpe)}
+                                              </span>
+                                            )}
+                                          </span>
+                                        </button>
+                                        <button
+                                          onClick={() => deleteSet(s.id)}
+                                          className="shrink-0 text-[var(--color-text-faint)] transition active:scale-90 active:text-[var(--color-danger)]"
+                                          aria-label="Delete set"
+                                        >
+                                          <Trash2 size={14} />
+                                        </button>
+                                      </>
+                                    )}
                                   </div>
                                 );
                               });
@@ -458,6 +626,34 @@ export function ActiveWorkout() {
                             />
                           </label>
                         </div>
+
+                        {(ex.weightType === 'each' || ex.weightType === 'each_bar') &&
+                          canPlateCalc(ex.unit) &&
+                          draft.weight &&
+                          !Number.isNaN(parseFloat(draft.weight)) &&
+                          (() => {
+                            const { plates, remainder } = plateBreakdown(parseFloat(draft.weight), ex.unit);
+                            return (
+                              <div className="mb-2.5 -mt-1 flex flex-wrap items-center gap-1.5 text-xs text-[var(--color-text-faint)]">
+                                <span className="uppercase tracking-wide">Plates/side</span>
+                                {plates.length === 0 ? (
+                                  <span>—</span>
+                                ) : (
+                                  plates.map((p, i) => (
+                                    <span
+                                      key={i}
+                                      className="rounded-md border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] px-1.5 py-0.5 font-mono font-bold text-[var(--color-text)]"
+                                    >
+                                      {trimNum(p)}
+                                    </span>
+                                  ))
+                                )}
+                                {remainder > 0.01 && (
+                                  <span className="text-[var(--color-amber)]">+{trimNum(remainder)} short</span>
+                                )}
+                              </div>
+                            );
+                          })()}
 
                         <div className="mb-2 flex items-center gap-2">
                           <button
@@ -564,7 +760,8 @@ export function ActiveWorkout() {
             </div>
             </Collapse>
           </div>
-        ))}
+          );
+        })}
       </div>
 
       {expandedId && (
@@ -656,6 +853,38 @@ export function ActiveWorkout() {
           defaultUnit={lastBodyWeight?.unit ?? 'kg'}
           onClose={() => setShowBodyWeight(false)}
         />
+      )}
+
+      {showNotes && (
+        <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/60" onClick={() => setShowNotes(false)}>
+          <div
+            className="w-full max-w-[560px] rounded-t-3xl border-t-[3px] border-[var(--color-border)] bg-[var(--color-surface)] p-4"
+            style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 16px)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-lg font-bold">Workout Notes</h2>
+              <button
+                onClick={() => setShowNotes(false)}
+                className="text-[var(--color-text-faint)] transition active:scale-90"
+                aria-label="Close"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <textarea
+              autoFocus
+              value={notesDraft}
+              onChange={(e) => setNotesDraft(e.target.value)}
+              placeholder="How did it feel? Anything to remember for next time…"
+              rows={4}
+              className="mb-3 w-full resize-none rounded-xl border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 py-2.5 text-sm outline-none"
+            />
+            <button onClick={saveNotes} className="btn-glow-primary w-full rounded-xl py-2.5 text-sm">
+              Save
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

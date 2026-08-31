@@ -65,6 +65,12 @@ export function SessionDetail() {
         })}
       </p>
 
+      {session.notes && (
+        <div className="mb-4 rounded-xl border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] p-3 text-sm italic text-[var(--color-text-dim)]">
+          "{session.notes}"
+        </div>
+      )}
+
       <div className="mb-5 grid grid-cols-3 gap-2">
         <div className="rounded-xl border-2 border-[var(--color-border)] bg-[var(--color-surface)] p-3 text-center">
           <div className="text-lg font-bold">{durationMin ?? '–'}</div>

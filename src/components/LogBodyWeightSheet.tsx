@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
 import { db, newId } from '../data/db';
+import { useEscapeToClose } from '../lib/useEscapeToClose';
 
 export function LogBodyWeightSheet({
   sessionId,
@@ -13,6 +14,8 @@ export function LogBodyWeightSheet({
 }) {
   const [weight, setWeight] = useState('');
   const [unit, setUnit] = useState<'kg' | 'lb'>(defaultUnit);
+
+  useEscapeToClose(true, onClose);
 
   async function save() {
     const w = parseFloat(weight);

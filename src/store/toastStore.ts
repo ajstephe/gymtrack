@@ -9,21 +9,23 @@ interface Toast {
 }
 
 interface ToastStore {
-  toast: Toast | null;
+  queue: Toast[];
   show: (message: string, kind?: ToastKind) => void;
   dismiss: (id: number) => void;
 }
 
 let nextId = 1;
 
-export const useToastStore = create<ToastStore>((set, get) => ({
-  toast: null,
+// A queue rather than a single slot: showing a second toast while the first is still up (e.g. a
+// PR toast immediately followed by another action's message) no longer silently drops the first.
+export const useToastStore = create<ToastStore>((set) => ({
+  queue: [],
   show: (message, kind = 'info') => {
     const id = nextId++;
-    set({ toast: { id, message, kind } });
+    set((s) => ({ queue: [...s.queue, { id, message, kind }] }));
   },
   dismiss: (id) => {
-    if (get().toast?.id === id) set({ toast: null });
+    set((s) => ({ queue: s.queue.filter((t) => t.id !== id) }));
   },
 }));
 

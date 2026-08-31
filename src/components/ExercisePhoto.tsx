@@ -1,25 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
+import { useRef, useState } from 'react';
 import { Camera, Trash2 } from 'lucide-react';
 import { db } from '../data/db';
+import { useExercisePhotoUrl } from '../lib/useExercisePhotoUrl';
 import { PhotoViewer } from './PhotoViewer';
-
-export function useExercisePhotoUrl(exerciseId: string): string | null {
-  const photo = useLiveQuery(() => db.photos.get(exerciseId), [exerciseId]);
-  const [url, setUrl] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!photo) {
-      setUrl(null);
-      return;
-    }
-    const objectUrl = URL.createObjectURL(photo.blob);
-    setUrl(objectUrl);
-    return () => URL.revokeObjectURL(objectUrl);
-  }, [photo]);
-
-  return url;
-}
 
 export function ExercisePhotoThumb({ exerciseId, size = 40 }: { exerciseId: string; size?: number }) {
   const url = useExercisePhotoUrl(exerciseId);

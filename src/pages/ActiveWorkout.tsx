@@ -21,6 +21,7 @@ import { formatWeight, formatDuration, trimNum } from '../lib/format';
 import { workingSets, suggestNextTarget, personalRecords, WEIGHT_INCREMENT } from '../lib/calculations';
 import { UNIT_OPTIONS } from '../lib/unitOptions';
 import { canPlateCalc, plateBreakdown } from '../lib/plates';
+import { useEscapeToClose } from '../lib/useEscapeToClose';
 import { hapticTap, hapticSuccess } from '../lib/haptics';
 import { showToast } from '../store/toastStore';
 import { ExercisePhotoThumb, ExercisePhotoButton } from '../components/ExercisePhoto';
@@ -79,6 +80,9 @@ export function ActiveWorkout() {
   const [showNotes, setShowNotes] = useState(false);
   const [notesDraft, setNotesDraft] = useState('');
   const [exerciseQuery, setExerciseQuery] = useState('');
+
+  useEscapeToClose(showAddExercise, () => setShowAddExercise(false));
+  useEscapeToClose(showNotes, () => setShowNotes(false));
 
   useEffect(() => {
     if (!session || session.endedAt) return;
@@ -575,7 +579,12 @@ export function ActiveWorkout() {
                                 }
 
                                 return (
-                                  <SwipeToDelete key={s.id} onDelete={() => deleteSet(s.id)} ariaLabel="Delete set">
+                                  <SwipeToDelete
+                                    key={s.id}
+                                    onDelete={() => deleteSet(s.id)}
+                                    ariaLabel="Delete set"
+                                    railBg="var(--color-surface-2)"
+                                  >
                                     <button
                                       onClick={() => startEditSet(s)}
                                       className="flex w-full items-center justify-between rounded-lg bg-[var(--color-surface-2)] px-3 py-1.5 text-left text-sm"

@@ -13,6 +13,7 @@ import { Spinner } from '../components/Spinner';
 import { estOneRepMax, topSetOf, workingSets } from '../lib/calculations';
 import { formatWeight, weightTypeLabel, trimNum } from '../lib/format';
 import { UNIT_OPTIONS } from '../lib/unitOptions';
+import { useEscapeToClose } from '../lib/useEscapeToClose';
 
 const WEIGHT_TYPE_OPTIONS: { value: WeightType; label: string }[] = [
   { value: null, label: 'Not specified' },
@@ -22,6 +23,11 @@ const WEIGHT_TYPE_OPTIONS: { value: WeightType; label: string }[] = [
   { value: 'each_bar', label: weightTypeLabel.each_bar },
 ];
 
+// Stable references so a not-yet-resolved useLiveQuery doesn't hand a fresh `[]` to a memo's
+// deps on every render — same array identity in, no spurious "changed" every time.
+const EMPTY_SESSIONS: never[] = [];
+const EMPTY_EXERCISES: never[] = [];
+
 export function ExerciseDetail() {
   const { exerciseId } = useParams<{ exerciseId: string }>();
   const navigate = useNavigate();
@@ -30,11 +36,12 @@ export function ExerciseDetail() {
     () => (exerciseId ? db.sets.where('exerciseId').equals(exerciseId).toArray() : []),
     [exerciseId]
   );
-  const sessions = useLiveQuery(() => db.sessions.toArray(), []) ?? [];
-  const siblingExercises = useLiveQuery(
-    () => (exercise ? db.exercises.where('routineId').equals(exercise.routineId).toArray() : []),
-    [exercise?.routineId]
-  ) ?? [];
+  const sessions = useLiveQuery(() => db.sessions.toArray(), []) ?? EMPTY_SESSIONS;
+  const siblingExercises =
+    useLiveQuery(
+      () => (exercise ? db.exercises.where('routineId').equals(exercise.routineId).toArray() : []),
+      [exercise?.routineId]
+    ) ?? EMPTY_EXERCISES;
 
   const [showEdit, setShowEdit] = useState(false);
   const [editForm, setEditForm] = useState({
@@ -44,6 +51,8 @@ export function ExerciseDetail() {
     unit: 'kg' as WeightUnit,
     weightType: null as WeightType,
   });
+
+  useEscapeToClose(showEdit, () => setShowEdit(false));
 
   const working = useMemo(() => (sets ? workingSets(sets) : []), [sets]);
 

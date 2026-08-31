@@ -11,6 +11,7 @@ import { Collapse } from '../components/Collapse';
 import { CategorySelect } from '../components/CategorySelect';
 import { SwipeToDelete } from '../components/SwipeToDelete';
 import { UNIT_OPTIONS } from '../lib/unitOptions';
+import { useEscapeToClose } from '../lib/useEscapeToClose';
 
 export function ExerciseLibrary() {
   const routines = useLiveQuery(async () => (await db.routines.toArray()).filter((r) => !r.archived), []) ?? [];
@@ -25,6 +26,7 @@ export function ExerciseLibrary() {
 
   const [query, setQuery] = useState('');
   const [showAdd, setShowAdd] = useState(false);
+  useEscapeToClose(showAdd, () => setShowAdd(false));
   const [form, setForm] = useState({ name: '', category: '', unit: 'kg' as WeightUnit, setupNote: '' });
 
   const allCategories = useMemo(() => {

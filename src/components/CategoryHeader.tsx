@@ -1,3 +1,4 @@
+import { createElement } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { categoryColor } from '../lib/categoryColors';
 import { categoryIcon } from '../lib/categoryIcons';
@@ -14,7 +15,6 @@ export function CategoryHeader({
   onToggle?: () => void;
 }) {
   const color = categoryColor(category);
-  const Icon = categoryIcon(category);
 
   const inner = (
     <>
@@ -22,7 +22,10 @@ export function CategoryHeader({
         className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2"
         style={{ background: `${color}22`, borderColor: color }}
       >
-        <Icon size={13} style={{ color }} strokeWidth={2.4} />
+        {/* createElement rather than a JSX tag from a variable: categoryIcon() returns a
+            reference to one of a fixed set of existing icon components, not a new component
+            definition, but the JSX-tag form is indistinguishable from that at a glance. */}
+        {createElement(categoryIcon(category), { size: 13, style: { color }, strokeWidth: 2.4 })}
       </span>
       <h2 className="text-sm font-extrabold tracking-wide" style={{ color }}>
         {category.toUpperCase()}

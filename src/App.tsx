@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, Suspense, lazy } from 'react';
 import { Routes, Route, useLocation, useNavigationType, useNavigate } from 'react-router-dom';
 import { ensureSeeded } from './data/db';
 import { requestPersistentStorage } from './lib/storagePersistence';
@@ -6,15 +6,20 @@ import { TabBar } from './components/TabBar';
 import { RestTimer } from './components/RestTimer';
 import { ConfirmDialog } from './components/ConfirmDialog';
 import { Toast } from './components/Toast';
-import { Dashboard } from './pages/Dashboard';
+import { Spinner } from './components/Spinner';
 import { StartWorkout } from './pages/StartWorkout';
 import { ActiveWorkout } from './pages/ActiveWorkout';
 import { History } from './pages/History';
 import { Calendar } from './pages/Calendar';
 import { SessionDetail } from './pages/SessionDetail';
 import { ExerciseLibrary } from './pages/ExerciseLibrary';
-import { ExerciseDetail } from './pages/ExerciseDetail';
 import { Settings } from './pages/Settings';
+
+// Dashboard and ExerciseDetail are the only two pages that pull in recharts — the single
+// biggest thing in the main bundle. Splitting just these two keeps every other route's chunk
+// (and the initial load, past the dashboard itself) free of it.
+const Dashboard = lazy(() => import('./pages/Dashboard').then((m) => ({ default: m.Dashboard })));
+const ExerciseDetail = lazy(() => import('./pages/ExerciseDetail').then((m) => ({ default: m.ExerciseDetail })));
 
 // Top-level tab-bar destinations. Anything else is a "push" (drill-in) route, which gets a
 // directional slide transition and an edge-swipe-back gesture instead of the flat tab fade.
@@ -82,17 +87,19 @@ function App() {
     <>
       <main className="safe-top flex-1 overflow-y-auto pb-6">
         <div key={location.pathname} className={transitionClass}>
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/train" element={<StartWorkout />} />
-            <Route path="/workout/:sessionId" element={<ActiveWorkout />} />
-            <Route path="/history" element={<History />} />
-            <Route path="/history/:sessionId" element={<SessionDetail />} />
-            <Route path="/calendar" element={<Calendar />} />
-            <Route path="/exercises" element={<ExerciseLibrary />} />
-            <Route path="/exercises/:exerciseId" element={<ExerciseDetail />} />
-            <Route path="/settings" element={<Settings />} />
-          </Routes>
+          <Suspense fallback={<Spinner />}>
+            <Routes>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/train" element={<StartWorkout />} />
+              <Route path="/workout/:sessionId" element={<ActiveWorkout />} />
+              <Route path="/history" element={<History />} />
+              <Route path="/history/:sessionId" element={<SessionDetail />} />
+              <Route path="/calendar" element={<Calendar />} />
+              <Route path="/exercises" element={<ExerciseLibrary />} />
+              <Route path="/exercises/:exerciseId" element={<ExerciseDetail />} />
+              <Route path="/settings" element={<Settings />} />
+            </Routes>
+          </Suspense>
         </div>
       </main>
       <RestTimer />

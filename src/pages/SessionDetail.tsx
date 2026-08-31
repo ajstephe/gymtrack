@@ -83,7 +83,7 @@ export function SessionDetail() {
 
       {session.notes && (
         <div className="mb-4 rounded-xl border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] p-3 text-sm italic text-[var(--color-text-dim)]">
-          "{session.notes}"
+          “{session.notes}”
         </div>
       )}
 

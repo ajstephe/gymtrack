@@ -1,5 +1,6 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { Home, Dumbbell, History, CalendarDays, ListTree } from 'lucide-react';
+import { hapticTap } from '../lib/haptics';
 
 const tabs = [
   { to: '/', label: 'Home', icon: Home, end: true },
@@ -28,11 +29,14 @@ export function TabBar() {
             }}
           />
         )}
-        {tabs.map(({ to, label, icon: Icon, end }) => (
+        {tabs.map(({ to, label, icon: Icon, end }, i) => (
           <NavLink
             key={to}
             to={to}
             end={end}
+            onClick={() => {
+              if (i !== activeIndex) hapticTap();
+            }}
             className={({ isActive }) =>
               `font-display relative z-10 flex flex-1 flex-col items-center gap-1 rounded-xl py-2 text-[10px] transition-all active:scale-90 ${
                 isActive ? 'text-[var(--color-text)]' : 'text-[var(--color-text-faint)]'

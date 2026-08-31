@@ -4,6 +4,18 @@ import { hapticTap } from './haptics';
 const LONG_PRESS_MS = 350;
 const MOVE_CANCEL_PX = 8;
 const FLIP_MS = 220;
+const AUTO_SCROLL_EDGE_PX = 60;
+const AUTO_SCROLL_MAX_SPEED = 14;
+
+function findScrollParent(el: HTMLElement | null): HTMLElement | null {
+  let node = el?.parentElement ?? null;
+  while (node) {
+    const style = getComputedStyle(node);
+    if (/(auto|scroll)/.test(style.overflowY) && node.scrollHeight > node.clientHeight) return node;
+    node = node.parentElement;
+  }
+  return null;
+}
 
 /**
  * Press-and-hold-to-drag reordering for a vertical list of blocks (e.g. category sections) whose
@@ -49,6 +61,9 @@ export function useDragReorder<T>(items: T[], keyFor: (item: T) => string, onReo
   const longPressTimer = useRef<number | null>(null);
   const justDraggedKeyRef = useRef<string | null>(null);
   const drag = useRef<{ key: string; pointerId: number; startClientY: number } | null>(null);
+  const scrollParentRef = useRef<HTMLElement | null>(null);
+  const pointerYRef = useRef(0);
+  const scrollRafRef = useRef<number | null>(null);
 
   function registerNode(key: string) {
     return (el: HTMLElement | null) => {
@@ -90,10 +105,42 @@ export function useDragReorder<T>(items: T[], keyFor: (item: T) => string, onReo
     }
   }
 
+  function stopAutoScroll() {
+    if (scrollRafRef.current != null) {
+      cancelAnimationFrame(scrollRafRef.current);
+      scrollRafRef.current = null;
+    }
+  }
+
+  // Lets a drag reach items outside the current viewport by scrolling the list's own scroll
+  // container while the pointer sits near its top/bottom edge, speeding up the closer it gets.
+  function tickAutoScroll() {
+    const container = scrollParentRef.current;
+    if (!container) {
+      scrollRafRef.current = null;
+      return;
+    }
+    const rect = container.getBoundingClientRect();
+    const y = pointerYRef.current;
+    let delta = 0;
+    if (y < rect.top + AUTO_SCROLL_EDGE_PX) {
+      delta = -AUTO_SCROLL_MAX_SPEED * (1 - Math.max(0, y - rect.top) / AUTO_SCROLL_EDGE_PX);
+    } else if (y > rect.bottom - AUTO_SCROLL_EDGE_PX) {
+      delta = AUTO_SCROLL_MAX_SPEED * (1 - Math.max(0, rect.bottom - y) / AUTO_SCROLL_EDGE_PX);
+    }
+    if (delta !== 0) {
+      container.scrollTop += delta;
+      scrollRafRef.current = requestAnimationFrame(tickAutoScroll);
+    } else {
+      scrollRafRef.current = null;
+    }
+  }
+
   function beginDrag(key: string, pointerId: number, clientY: number) {
     captureRects();
     drag.current = { key, pointerId, startClientY: clientY };
     draggingKeyRef.current = key;
+    scrollParentRef.current = findScrollParent(nodeRefs.current.get(key) ?? null);
     setDraggingKey(key);
     setDragY(0);
     hapticTap();
@@ -140,6 +187,9 @@ export function useDragReorder<T>(items: T[], keyFor: (item: T) => string, onReo
       if (!d || e.pointerId !== d.pointerId) return;
       setDragY(e.clientY - d.startClientY);
 
+      pointerYRef.current = e.clientY;
+      if (scrollRafRef.current == null) scrollRafRef.current = requestAnimationFrame(tickAutoScroll);
+
       const currentOrder = orderRef.current;
       const draggedIndex = currentOrder.indexOf(d.key);
       let targetIndex = draggedIndex;
@@ -152,6 +202,7 @@ export function useDragReorder<T>(items: T[], keyFor: (item: T) => string, onReo
         if (i > draggedIndex && e.clientY > mid) targetIndex = i;
       }
       if (targetIndex !== draggedIndex) {
+        hapticTap();
         captureRects();
         setOrder((prev) => {
           const next = [...prev];
@@ -167,6 +218,8 @@ export function useDragReorder<T>(items: T[], keyFor: (item: T) => string, onReo
       if (!d || e.pointerId !== d.pointerId) return;
       drag.current = null;
       draggingKeyRef.current = null;
+      scrollParentRef.current = null;
+      stopAutoScroll();
       setDraggingKey(null);
       setDragY(0);
       // Keyed, not a bare boolean: a hook instance backs every row in the category, not just the

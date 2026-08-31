@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Link } from 'react-router-dom';
 import { Search, Plus, ChevronRight, ChevronUp, ChevronDown } from 'lucide-react';
@@ -12,8 +12,8 @@ import { CategorySelect } from '../components/CategorySelect';
 import { SwipeToDelete } from '../components/SwipeToDelete';
 import { UNIT_OPTIONS } from '../lib/unitOptions';
 import { useEscapeToClose } from '../lib/useEscapeToClose';
+import { useCategoryOrdering } from '../lib/useCategoryOrdering';
 import { useDragReorder } from '../lib/useDragReorder';
-import { applyCategoryOrder, saveCategoryOrder } from '../lib/categoryOrder';
 
 /**
  * One category's exercise rows, as its own component so it can own a single `useDragReorder`
@@ -35,7 +35,7 @@ function ExerciseGroupList({
 }) {
   const handleReorder = useCallback((orderedIds: string[]) => onReorder(items, orderedIds), [items, onReorder]);
   const dragReorder = useDragReorder(items, (ex) => ex.id, handleReorder);
-  const canReorder = !query.trim();
+  const canReorder = !query.trim() && items.length > 1;
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -78,7 +78,7 @@ function ExerciseGroupList({
                   </div>
                   <ChevronRight size={16} className="shrink-0 text-[var(--color-text-faint)]" />
                 </Link>
-                {canReorder && (
+                {!query.trim() && items.length > 1 && (
                   <div className="flex shrink-0 flex-col">
                     <button
                       onClick={() => onMove(items, i, -1)}
@@ -123,21 +123,9 @@ export function ExerciseLibrary() {
   useEscapeToClose(showAdd, () => setShowAdd(false));
   const [form, setForm] = useState({ name: '', category: '', unit: 'kg' as WeightUnit, setupNote: '' });
 
-  const allCategories = useMemo(() => {
-    if (!exercises) return [];
-    const seen: string[] = [];
-    for (const ex of exercises) if (!seen.includes(ex.category)) seen.push(ex.category);
-    return seen;
-  }, [exercises]);
-
-  const categoryOrderRow = useLiveQuery(
-    () => (activeRoutineId ? db.categoryOrders.get(activeRoutineId) : undefined),
-    [activeRoutineId]
-  );
-  const orderedCategoryNames = useMemo(
-    () => applyCategoryOrder(allCategories, categoryOrderRow?.order),
-    [allCategories, categoryOrderRow]
-  );
+  const { categories: categoriesBase, dragReorder, moveCategory } = useCategoryOrdering(activeRoutineId, exercises);
+  const allCategories = categoriesBase.map((c) => c.category);
+  const categoryNamesKey = allCategories.join(' ');
 
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
   const categoriesInitialized = useRef<string | null>(null);
@@ -147,7 +135,10 @@ export function ExerciseLibrary() {
       categoriesInitialized.current = activeRoutineId;
       setCollapsedCategories(new Set(allCategories));
     }
-  }, [allCategories, activeRoutineId]);
+    // allCategories is intentionally not a dep — categoryNamesKey is its stable stand-in, since
+    // the array itself is a fresh reference every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [categoryNamesKey, activeRoutineId]);
 
   function toggleCategory(category: string) {
     setCollapsedCategories((prev) => {
@@ -158,31 +149,13 @@ export function ExerciseLibrary() {
     });
   }
 
-  const fullGrouped = useMemo(() => {
-    if (!exercises) return [];
-    const map = new Map<string, Exercise[]>();
-    for (const ex of exercises) {
-      if (!map.has(ex.category)) map.set(ex.category, []);
-      map.get(ex.category)!.push(ex);
-    }
-    return orderedCategoryNames.map((cat) => ({ category: cat, items: map.get(cat) ?? [] }));
-  }, [exercises, orderedCategoryNames]);
-
-  const persistCategoryOrder = useCallback(
-    (keys: string[]) => {
-      if (activeRoutineId) saveCategoryOrder(activeRoutineId, keys);
-    },
-    [activeRoutineId]
-  );
-  const dragReorder = useDragReorder(fullGrouped, (g) => g.category, persistCategoryOrder);
-
-  const grouped = useMemo(() => {
+  const grouped = (() => {
     const q = query.trim().toLowerCase();
-    if (!q) return dragReorder.orderedItems;
-    return dragReorder.orderedItems
-      .map((g) => ({ category: g.category, items: g.items.filter((e) => e.name.toLowerCase().includes(q)) }))
+    if (!q) return categoriesBase.map((g) => ({ category: g.category, items: g.exercises }));
+    return categoriesBase
+      .map((g) => ({ category: g.category, items: g.exercises.filter((e) => e.name.toLowerCase().includes(q)) }))
       .filter((g) => g.items.length > 0);
-  }, [dragReorder.orderedItems, query]);
+  })();
 
   async function addExercise() {
     if (!form.name.trim() || !activeRoutineId) return;
@@ -262,9 +235,10 @@ export function ExerciseLibrary() {
         {grouped.length === 0 ? (
           <EmptyState title="No exercises found" />
         ) : (
-          grouped.map(({ category, items }) => {
+          grouped.map(({ category, items }, i) => {
             const isCollapsed = !query.trim() && collapsedCategories.has(category);
             const isDragging = dragReorder.draggingKey === category;
+            const canReorderCategories = !query.trim() && grouped.length > 1;
             return (
             <div
               key={category}
@@ -280,8 +254,12 @@ export function ExerciseLibrary() {
                 count={items.length}
                 collapsed={isCollapsed}
                 onToggle={dragReorder.swallowDragClick(category, () => toggleCategory(category))}
-                onDragPointerDown={query.trim() ? undefined : dragReorder.dragHandleProps(category).onPointerDown}
+                onDragPointerDown={canReorderCategories ? dragReorder.dragHandleProps(category).onPointerDown : undefined}
                 dragging={isDragging}
+                onMoveUp={canReorderCategories ? () => moveCategory(i, -1) : undefined}
+                onMoveDown={canReorderCategories ? () => moveCategory(i, 1) : undefined}
+                canMoveUp={i > 0}
+                canMoveDown={i < grouped.length - 1}
               />
               <Collapse open={!isCollapsed}>
                 <ExerciseGroupList

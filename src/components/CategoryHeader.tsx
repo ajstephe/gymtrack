@@ -1,5 +1,5 @@
 import { createElement, type PointerEventHandler } from 'react';
-import { ChevronDown, GripVertical } from 'lucide-react';
+import { ChevronDown, ChevronUp, GripVertical } from 'lucide-react';
 import { categoryColor } from '../lib/categoryColors';
 import { categoryIcon } from '../lib/categoryIcons';
 
@@ -10,6 +10,10 @@ export function CategoryHeader({
   onToggle,
   onDragPointerDown,
   dragging,
+  onMoveUp,
+  onMoveDown,
+  canMoveUp,
+  canMoveDown,
 }: {
   category: string;
   count?: number;
@@ -20,8 +24,15 @@ export function CategoryHeader({
   onDragPointerDown?: PointerEventHandler<HTMLButtonElement>;
   /** True while this specific header is the one currently being dragged — lifts it visually. */
   dragging?: boolean;
+  /** Non-gesture fallback for reordering, mirroring the up/down buttons exercise rows already
+   * have — present only when there's more than one category to reorder against. */
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
+  canMoveUp?: boolean;
+  canMoveDown?: boolean;
 }) {
   const color = categoryColor(category);
+  const showReorderArrows = onMoveUp != null && onMoveDown != null;
 
   const inner = (
     <>
@@ -53,20 +64,44 @@ export function CategoryHeader({
     </>
   );
 
-  if (onToggle) {
-    return (
-      <button
-        onClick={onToggle}
-        onPointerDown={onDragPointerDown}
-        className={`mb-2.5 flex w-full items-center gap-2 rounded-xl px-1 py-1 text-left transition active:scale-[0.98] ${
-          dragging ? 'card-bevel bg-[var(--color-surface)]' : ''
-        }`}
-        style={dragging ? { touchAction: 'none' } : undefined}
-      >
-        {inner}
-      </button>
-    );
-  }
+  const toggleButton = onToggle ? (
+    <button
+      onClick={onToggle}
+      onPointerDown={onDragPointerDown}
+      className={`flex min-w-0 flex-1 items-center gap-2 rounded-xl px-1 py-1 text-left transition active:scale-[0.98] ${
+        dragging ? 'card-bevel bg-[var(--color-surface)]' : ''
+      }`}
+      style={dragging ? { touchAction: 'none' } : undefined}
+    >
+      {inner}
+    </button>
+  ) : (
+    <div className="flex min-w-0 flex-1 items-center gap-2 px-1">{inner}</div>
+  );
 
-  return <div className="mb-2.5 flex items-center gap-2 px-1">{inner}</div>;
+  return (
+    <div className="mb-2.5 flex items-center gap-1">
+      {toggleButton}
+      {showReorderArrows && (
+        <div className="flex shrink-0 flex-col">
+          <button
+            onClick={onMoveUp}
+            disabled={!canMoveUp}
+            className="rounded p-1 text-[var(--color-text-faint)] transition active:scale-90 disabled:opacity-20"
+            aria-label={`Move ${category} up`}
+          >
+            <ChevronUp size={14} />
+          </button>
+          <button
+            onClick={onMoveDown}
+            disabled={!canMoveDown}
+            className="rounded p-1 text-[var(--color-text-faint)] transition active:scale-90 disabled:opacity-20"
+            aria-label={`Move ${category} down`}
+          >
+            <ChevronDown size={14} />
+          </button>
+        </div>
+      )}
+    </div>
+  );
 }

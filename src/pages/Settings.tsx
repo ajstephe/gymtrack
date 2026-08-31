@@ -40,6 +40,7 @@ export function Settings() {
     try {
       const data = await buildBackup();
       downloadBackup(data);
+      showToast('Backup exported.', 'success');
     } finally {
       setBusy(null);
     }
@@ -108,7 +109,7 @@ export function Settings() {
         {!persisted && (
           <button
             onClick={handleRequestPersist}
-            className="w-full rounded-lg bg-[var(--color-surface-2)] py-2 text-sm font-medium"
+            className="w-full rounded-lg border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] py-2 text-sm font-medium transition active:scale-95"
           >
             Enable protection
           </button>
@@ -136,7 +137,7 @@ export function Settings() {
         {notifStatus === 'default' && (
           <button
             onClick={handleEnableNotifications}
-            className="w-full rounded-lg bg-[var(--color-surface-2)] py-2 text-sm font-medium"
+            className="w-full rounded-lg border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] py-2 text-sm font-medium transition active:scale-95"
           >
             Enable alerts
           </button>

@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useNavigate, Link } from 'react-router-dom';
-import { MapPin, Plus, ChevronRight, Play, Trash2 } from 'lucide-react';
+import { MapPin, Plus, ChevronRight, Play } from 'lucide-react';
 import { db, newId } from '../data/db';
 import { useSessionStore } from '../store/sessionStore';
+import { SwipeToDelete } from '../components/SwipeToDelete';
 
 const accentColor: Record<string, string> = {
   crimson: 'var(--color-crimson)',
@@ -48,8 +49,7 @@ export function StartWorkout() {
     setAddingRoutine(false);
   }
 
-  async function removeRoutine(id: string, name: string) {
-    if (!confirm(`Remove "${name}"? Its exercises and past workout history stay intact, just hidden.`)) return;
+  async function removeRoutine(id: string) {
     await db.routines.update(id, { archived: true });
   }
 
@@ -78,14 +78,11 @@ export function StartWorkout() {
 
       <div className="flex flex-col gap-3">
         {routines.map((r) => (
-          <div
-            key={r.id}
-            className="card-bevel flex items-center rounded-2xl border-2 border-[var(--color-border)] bg-[var(--color-surface)] pr-1.5 transition active:scale-[0.99]"
-          >
+          <SwipeToDelete key={r.id} onDelete={() => removeRoutine(r.id)} ariaLabel={`Remove ${r.name}`}>
             <button
               onClick={() => startWorkout(r.id)}
               disabled={!!(activeSession && !activeSession.endedAt)}
-              className="flex min-w-0 flex-1 items-center justify-between px-4 py-4 text-left disabled:opacity-40"
+              className="card-bevel flex w-full items-center justify-between rounded-2xl border-2 border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-4 text-left transition active:scale-[0.99] disabled:opacity-40"
             >
               <div className="flex min-w-0 items-center gap-3">
                 <div
@@ -103,14 +100,7 @@ export function StartWorkout() {
               </div>
               <ChevronRight size={18} className="shrink-0 text-[var(--color-text-faint)]" />
             </button>
-            <button
-              onClick={() => removeRoutine(r.id, r.name)}
-              className="shrink-0 rounded-lg p-2 text-[var(--color-text-faint)] transition active:scale-90 active:text-[var(--color-danger)]"
-              aria-label={`Remove ${r.name}`}
-            >
-              <Trash2 size={15} />
-            </button>
-          </div>
+          </SwipeToDelete>
         ))}
 
         {addingRoutine ? (

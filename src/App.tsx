@@ -1,9 +1,11 @@
-import { useEffect, useState } from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Routes, Route, useLocation, useNavigationType, useNavigate } from 'react-router-dom';
 import { ensureSeeded } from './data/db';
 import { requestPersistentStorage } from './lib/storagePersistence';
 import { TabBar } from './components/TabBar';
 import { RestTimer } from './components/RestTimer';
+import { ConfirmDialog } from './components/ConfirmDialog';
+import { Toast } from './components/Toast';
 import { Dashboard } from './pages/Dashboard';
 import { StartWorkout } from './pages/StartWorkout';
 import { ActiveWorkout } from './pages/ActiveWorkout';
@@ -14,15 +16,59 @@ import { ExerciseLibrary } from './pages/ExerciseLibrary';
 import { ExerciseDetail } from './pages/ExerciseDetail';
 import { Settings } from './pages/Settings';
 
+// Top-level tab-bar destinations. Anything else is a "push" (drill-in) route, which gets a
+// directional slide transition and an edge-swipe-back gesture instead of the flat tab fade.
+const TAB_ROUTES = new Set(['/', '/train', '/history', '/calendar', '/exercises']);
+const EDGE_ZONE_PX = 24;
+const SWIPE_BACK_THRESHOLD_PX = 70;
+const SWIPE_BACK_MAX_DRIFT_PX = 60;
+
 function App() {
   const [ready, setReady] = useState(false);
   const location = useLocation();
+  const navigationType = useNavigationType();
+  const navigate = useNavigate();
   const showTabBar = !location.pathname.startsWith('/workout/');
+  const isPushRoute = !TAB_ROUTES.has(location.pathname);
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
+
+  const transitionClass = useMemo(() => {
+    if (navigationType === 'POP') return 'page-slide-in-left';
+    if (navigationType === 'PUSH' && isPushRoute) return 'page-slide-in-right';
+    return 'page-fade-in';
+  }, [navigationType, isPushRoute]);
 
   useEffect(() => {
     ensureSeeded().then(() => setReady(true));
     requestPersistentStorage();
   }, []);
+
+  // Edge-swipe-to-go-back: a discrete gesture (not a live drag-follow) — starting a touch within
+  // the left edge zone and releasing well to the right pops the current push route.
+  useEffect(() => {
+    if (!isPushRoute) return;
+    function onTouchStart(e: TouchEvent) {
+      const t = e.touches[0];
+      touchStart.current = t.clientX <= EDGE_ZONE_PX ? { x: t.clientX, y: t.clientY } : null;
+    }
+    function onTouchEnd(e: TouchEvent) {
+      const start = touchStart.current;
+      touchStart.current = null;
+      if (!start) return;
+      const t = e.changedTouches[0];
+      const dx = t.clientX - start.x;
+      const dy = t.clientY - start.y;
+      if (dx > SWIPE_BACK_THRESHOLD_PX && Math.abs(dy) < SWIPE_BACK_MAX_DRIFT_PX) {
+        navigate(-1);
+      }
+    }
+    window.addEventListener('touchstart', onTouchStart, { passive: true });
+    window.addEventListener('touchend', onTouchEnd, { passive: true });
+    return () => {
+      window.removeEventListener('touchstart', onTouchStart);
+      window.removeEventListener('touchend', onTouchEnd);
+    };
+  }, [isPushRoute, navigate]);
 
   if (!ready) {
     return (
@@ -35,7 +81,7 @@ function App() {
   return (
     <>
       <main className="safe-top flex-1 overflow-y-auto pb-6">
-        <div key={location.pathname} className="page-fade-in">
+        <div key={location.pathname} className={transitionClass}>
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/train" element={<StartWorkout />} />
@@ -51,6 +97,8 @@ function App() {
       </main>
       <RestTimer />
       {showTabBar && <TabBar />}
+      <ConfirmDialog />
+      <Toast />
     </>
   );
 }

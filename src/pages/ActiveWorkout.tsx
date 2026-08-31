@@ -3,11 +3,11 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import {
   ChevronDown,
-  Trash2,
   Check,
   X,
   Flame,
   Plus,
+  Minus,
   Scale,
   SlidersHorizontal,
   Repeat,
@@ -18,14 +18,17 @@ import { db, newId } from '../data/db';
 import { useSessionStore } from '../store/sessionStore';
 import { useRestTimerStore } from '../store/restTimerStore';
 import { formatWeight, formatDuration, trimNum } from '../lib/format';
-import { workingSets, suggestNextTarget } from '../lib/calculations';
+import { workingSets, suggestNextTarget, personalRecords, WEIGHT_INCREMENT } from '../lib/calculations';
 import { UNIT_OPTIONS } from '../lib/unitOptions';
 import { canPlateCalc, plateBreakdown } from '../lib/plates';
+import { hapticTap, hapticSuccess } from '../lib/haptics';
+import { showToast } from '../store/toastStore';
 import { ExercisePhotoThumb, ExercisePhotoButton } from '../components/ExercisePhoto';
 import { CategoryHeader } from '../components/CategoryHeader';
 import { CategorySelect } from '../components/CategorySelect';
 import { Collapse } from '../components/Collapse';
 import { LogBodyWeightSheet } from '../components/LogBodyWeightSheet';
+import { SwipeToDelete } from '../components/SwipeToDelete';
 import type { Exercise, SetEntry, WeightUnit } from '../data/types';
 
 const REST_PRESETS = [60, 90, 120, 180];
@@ -164,6 +167,13 @@ export function ActiveWorkout() {
     const reps = parseInt(draft.reps, 10);
     if (Number.isNaN(weight) || Number.isNaN(reps) || !sessionId) return;
     const existing = setsByExercise.get(ex.id) ?? [];
+
+    let isPR = false;
+    if (!draft.warmup) {
+      const priorBest = personalRecords(workingSets(allSets ?? [])).get(ex.id);
+      isPR = !priorBest || weight > priorBest.weight;
+    }
+
     await db.sets.add({
       id: newId('set'),
       sessionId,
@@ -182,10 +192,16 @@ export function ActiveWorkout() {
       return next;
     });
     startTimer(restDuration, ex.name);
+
+    if (isPR && weight > 0) {
+      hapticSuccess();
+      showToast(`New PR — ${formatWeight(weight, ex.unit)} × ${reps} on ${ex.name}`, 'success');
+    } else {
+      hapticTap();
+    }
   }
 
   async function deleteSet(setId: string) {
-    if (!confirm('Delete this set? This cannot be undone.')) return;
     await db.sets.delete(setId);
     if (editingSetId === setId) setEditingSetId(null);
   }
@@ -201,6 +217,7 @@ export function ActiveWorkout() {
     if (Number.isNaN(weight) || Number.isNaN(reps)) return;
     await db.sets.update(s.id, { weight, reps, rpe: editDraft.rpe ? parseFloat(editDraft.rpe) : undefined });
     setEditingSetId(null);
+    hapticTap();
   }
 
   async function quickRepeatSet(ex: Exercise) {
@@ -221,6 +238,22 @@ export function ActiveWorkout() {
       completedAt: new Date().toISOString(),
     });
     startTimer(restDuration, ex.name);
+    hapticTap();
+  }
+
+  function bumpWeight(ex: Exercise, delta: 1 | -1) {
+    const draft = draftFor(ex);
+    const current = draft.weight ? parseFloat(draft.weight) : 0;
+    const inc = WEIGHT_INCREMENT[ex.unit];
+    const next = Math.max(0, Math.round((current + delta * inc) * 100) / 100);
+    updateDraft(ex.id, { weight: trimNum(next) });
+  }
+
+  function bumpReps(ex: Exercise, delta: 1 | -1) {
+    const draft = draftFor(ex);
+    const current = draft.reps ? parseInt(draft.reps, 10) : 0;
+    const next = Math.max(0, current + delta);
+    updateDraft(ex.id, { reps: String(next) });
   }
 
   async function saveNotes() {
@@ -483,95 +516,87 @@ export function ActiveWorkout() {
                                 if (!s.isWarmup) workingIndex++;
                                 const label = s.isWarmup ? 'Warm-up' : `Set ${workingIndex}`;
                                 const isEditing = editingSetId === s.id;
+
+                                if (isEditing) {
+                                  return (
+                                    <div
+                                      key={s.id}
+                                      className="flex items-center gap-2 rounded-lg bg-[var(--color-surface-2)] px-3 py-1.5 text-sm"
+                                    >
+                                      <span
+                                        className={`shrink-0 ${s.isWarmup ? 'font-medium text-[var(--color-amber)]' : 'text-[var(--color-text-faint)]'}`}
+                                      >
+                                        {label}
+                                      </span>
+                                      <input
+                                        autoFocus
+                                        type="number"
+                                        inputMode="decimal"
+                                        value={editDraft.weight}
+                                        onChange={(e) => setEditDraft((d) => ({ ...d, weight: e.target.value }))}
+                                        className="w-16 min-w-0 rounded-md border-2 border-[var(--color-border)] bg-[var(--color-surface)] px-1.5 py-1 text-center font-mono text-sm font-bold outline-none"
+                                      />
+                                      <span className="shrink-0 text-[var(--color-text-faint)]">×</span>
+                                      <input
+                                        type="number"
+                                        inputMode="numeric"
+                                        value={editDraft.reps}
+                                        onChange={(e) => setEditDraft((d) => ({ ...d, reps: e.target.value }))}
+                                        className="w-12 min-w-0 rounded-md border-2 border-[var(--color-border)] bg-[var(--color-surface)] px-1.5 py-1 text-center font-mono text-sm font-bold outline-none"
+                                      />
+                                      <select
+                                        value={editDraft.rpe}
+                                        onChange={(e) => setEditDraft((d) => ({ ...d, rpe: e.target.value }))}
+                                        className="min-w-0 rounded-md border-2 border-[var(--color-border)] bg-[var(--color-surface)] px-1 py-1 text-xs outline-none"
+                                      >
+                                        <option value="">RPE</option>
+                                        {RPE_OPTIONS.map((r) => (
+                                          <option key={r} value={r}>
+                                            {trimNum(r)}
+                                          </option>
+                                        ))}
+                                      </select>
+                                      <button
+                                        onClick={() => saveEditSet(s)}
+                                        className="ml-auto shrink-0 text-[var(--color-primary)] transition active:scale-90"
+                                        aria-label="Save set"
+                                      >
+                                        <Check size={16} strokeWidth={3} />
+                                      </button>
+                                      <button
+                                        onClick={() => setEditingSetId(null)}
+                                        className="shrink-0 text-[var(--color-text-faint)] transition active:scale-90"
+                                        aria-label="Cancel edit"
+                                      >
+                                        <X size={16} />
+                                      </button>
+                                    </div>
+                                  );
+                                }
+
                                 return (
-                                  <div
-                                    key={s.id}
-                                    className="flex items-center gap-2 rounded-lg bg-[var(--color-surface-2)] px-3 py-1.5 text-sm"
-                                  >
-                                    {isEditing ? (
-                                      <>
-                                        <span
-                                          className={`shrink-0 ${s.isWarmup ? 'font-medium text-[var(--color-amber)]' : 'text-[var(--color-text-faint)]'}`}
-                                        >
-                                          {label}
-                                        </span>
-                                        <input
-                                          autoFocus
-                                          type="number"
-                                          inputMode="decimal"
-                                          value={editDraft.weight}
-                                          onChange={(e) => setEditDraft((d) => ({ ...d, weight: e.target.value }))}
-                                          className="w-16 min-w-0 rounded-md border-2 border-[var(--color-border)] bg-[var(--color-surface)] px-1.5 py-1 text-center font-mono text-sm font-bold outline-none"
-                                        />
-                                        <span className="shrink-0 text-[var(--color-text-faint)]">×</span>
-                                        <input
-                                          type="number"
-                                          inputMode="numeric"
-                                          value={editDraft.reps}
-                                          onChange={(e) => setEditDraft((d) => ({ ...d, reps: e.target.value }))}
-                                          className="w-12 min-w-0 rounded-md border-2 border-[var(--color-border)] bg-[var(--color-surface)] px-1.5 py-1 text-center font-mono text-sm font-bold outline-none"
-                                        />
-                                        <select
-                                          value={editDraft.rpe}
-                                          onChange={(e) => setEditDraft((d) => ({ ...d, rpe: e.target.value }))}
-                                          className="min-w-0 rounded-md border-2 border-[var(--color-border)] bg-[var(--color-surface)] px-1 py-1 text-xs outline-none"
-                                        >
-                                          <option value="">RPE</option>
-                                          {RPE_OPTIONS.map((r) => (
-                                            <option key={r} value={r}>
-                                              {trimNum(r)}
-                                            </option>
-                                          ))}
-                                        </select>
-                                        <button
-                                          onClick={() => saveEditSet(s)}
-                                          className="ml-auto shrink-0 text-[var(--color-primary)] transition active:scale-90"
-                                          aria-label="Save set"
-                                        >
-                                          <Check size={16} strokeWidth={3} />
-                                        </button>
-                                        <button
-                                          onClick={() => setEditingSetId(null)}
-                                          className="shrink-0 text-[var(--color-text-faint)] transition active:scale-90"
-                                          aria-label="Cancel edit"
-                                        >
-                                          <X size={16} />
-                                        </button>
-                                      </>
-                                    ) : (
-                                      <>
-                                        <button
-                                          onClick={() => startEditSet(s)}
-                                          className="flex min-w-0 flex-1 items-center justify-between text-left"
-                                        >
-                                          <span
-                                            className={
-                                              s.isWarmup
-                                                ? 'font-medium text-[var(--color-amber)]'
-                                                : 'text-[var(--color-text-faint)]'
-                                            }
-                                          >
-                                            {label}
+                                  <SwipeToDelete key={s.id} onDelete={() => deleteSet(s.id)} ariaLabel="Delete set">
+                                    <button
+                                      onClick={() => startEditSet(s)}
+                                      className="flex w-full items-center justify-between rounded-lg bg-[var(--color-surface-2)] px-3 py-1.5 text-left text-sm"
+                                    >
+                                      <span
+                                        className={
+                                          s.isWarmup ? 'font-medium text-[var(--color-amber)]' : 'text-[var(--color-text-faint)]'
+                                        }
+                                      >
+                                        {label}
+                                      </span>
+                                      <span className="font-medium tabular-nums">
+                                        {formatWeight(s.weight, s.unit)} × {s.reps}
+                                        {s.rpe != null && (
+                                          <span className="ml-1.5 font-normal text-[var(--color-text-faint)]">
+                                            RPE {trimNum(s.rpe)}
                                           </span>
-                                          <span className="font-medium tabular-nums">
-                                            {formatWeight(s.weight, s.unit)} × {s.reps}
-                                            {s.rpe != null && (
-                                              <span className="ml-1.5 font-normal text-[var(--color-text-faint)]">
-                                                RPE {trimNum(s.rpe)}
-                                              </span>
-                                            )}
-                                          </span>
-                                        </button>
-                                        <button
-                                          onClick={() => deleteSet(s.id)}
-                                          className="shrink-0 text-[var(--color-text-faint)] transition active:scale-90 active:text-[var(--color-danger)]"
-                                          aria-label="Delete set"
-                                        >
-                                          <Trash2 size={14} />
-                                        </button>
-                                      </>
-                                    )}
-                                  </div>
+                                        )}
+                                      </span>
+                                    </button>
+                                  </SwipeToDelete>
                                 );
                               });
                             })()}
@@ -603,27 +628,63 @@ export function ActiveWorkout() {
                                 </span>
                               )}
                             </span>
-                            <input
-                              type="number"
-                              inputMode="decimal"
-                              value={draft.weight}
-                              onChange={(e) => updateDraft(ex.id, { weight: e.target.value })}
-                              placeholder="0"
-                              className="w-full rounded-xl border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 py-2.5 font-mono text-xl font-bold outline-none"
-                            />
+                            <div className="flex items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => bumpWeight(ex, -1)}
+                                className="flex h-9 w-8 shrink-0 items-center justify-center rounded-lg border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] text-[var(--color-text-dim)] transition active:scale-90"
+                                aria-label="Decrease weight"
+                              >
+                                <Minus size={14} />
+                              </button>
+                              <input
+                                type="number"
+                                inputMode="decimal"
+                                value={draft.weight}
+                                onChange={(e) => updateDraft(ex.id, { weight: e.target.value })}
+                                placeholder="0"
+                                className="w-full min-w-0 rounded-xl border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] px-2 py-2.5 text-center font-mono text-xl font-bold outline-none"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => bumpWeight(ex, 1)}
+                                className="flex h-9 w-8 shrink-0 items-center justify-center rounded-lg border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] text-[var(--color-text-dim)] transition active:scale-90"
+                                aria-label="Increase weight"
+                              >
+                                <Plus size={14} />
+                              </button>
+                            </div>
                           </label>
                           <label className="flex-1">
                             <span className="mb-1 block text-[10px] uppercase tracking-wide text-[var(--color-text-faint)]">
                               Reps
                             </span>
-                            <input
-                              type="number"
-                              inputMode="numeric"
-                              value={draft.reps}
-                              onChange={(e) => updateDraft(ex.id, { reps: e.target.value })}
-                              placeholder="0"
-                              className="w-full rounded-xl border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 py-2.5 font-mono text-xl font-bold outline-none"
-                            />
+                            <div className="flex items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => bumpReps(ex, -1)}
+                                className="flex h-9 w-8 shrink-0 items-center justify-center rounded-lg border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] text-[var(--color-text-dim)] transition active:scale-90"
+                                aria-label="Decrease reps"
+                              >
+                                <Minus size={14} />
+                              </button>
+                              <input
+                                type="number"
+                                inputMode="numeric"
+                                value={draft.reps}
+                                onChange={(e) => updateDraft(ex.id, { reps: e.target.value })}
+                                placeholder="0"
+                                className="w-full min-w-0 rounded-xl border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] px-2 py-2.5 text-center font-mono text-xl font-bold outline-none"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => bumpReps(ex, 1)}
+                                className="flex h-9 w-8 shrink-0 items-center justify-center rounded-lg border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] text-[var(--color-text-dim)] transition active:scale-90"
+                                aria-label="Increase reps"
+                              >
+                                <Plus size={14} />
+                              </button>
+                            </div>
                           </label>
                         </div>
 

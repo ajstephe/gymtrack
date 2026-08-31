@@ -1,14 +1,26 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { ArrowLeft, Trophy, TrendingUp, ListOrdered, CalendarClock } from 'lucide-react';
+import { ArrowLeft, Pencil, X, Trophy, TrendingUp, ListOrdered, CalendarClock } from 'lucide-react';
 import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 import { db } from '../data/db';
+import type { WeightType, WeightUnit } from '../data/types';
 import { StatCard } from '../components/StatCard';
 import { EmptyState } from '../components/EmptyState';
 import { ExercisePhotoCard } from '../components/ExercisePhoto';
+import { CategorySelect } from '../components/CategorySelect';
+import { Spinner } from '../components/Spinner';
 import { estOneRepMax, topSetOf, workingSets } from '../lib/calculations';
 import { formatWeight, weightTypeLabel, trimNum } from '../lib/format';
+import { UNIT_OPTIONS } from '../lib/unitOptions';
+
+const WEIGHT_TYPE_OPTIONS: { value: WeightType; label: string }[] = [
+  { value: null, label: 'Not specified' },
+  { value: 'each', label: weightTypeLabel.each },
+  { value: 'total', label: weightTypeLabel.total },
+  { value: 'bar', label: weightTypeLabel.bar },
+  { value: 'each_bar', label: weightTypeLabel.each_bar },
+];
 
 export function ExerciseDetail() {
   const { exerciseId } = useParams<{ exerciseId: string }>();
@@ -19,6 +31,19 @@ export function ExerciseDetail() {
     [exerciseId]
   );
   const sessions = useLiveQuery(() => db.sessions.toArray(), []) ?? [];
+  const siblingExercises = useLiveQuery(
+    () => (exercise ? db.exercises.where('routineId').equals(exercise.routineId).toArray() : []),
+    [exercise?.routineId]
+  ) ?? [];
+
+  const [showEdit, setShowEdit] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name: '',
+    category: '',
+    setupNote: '',
+    unit: 'kg' as WeightUnit,
+    weightType: null as WeightType,
+  });
 
   const working = useMemo(() => (sets ? workingSets(sets) : []), [sets]);
 
@@ -57,15 +82,58 @@ export function ExerciseDetail() {
   const bestE1rm = working.length > 0 ? Math.max(...working.map((s) => estOneRepMax(s.weight, s.reps))) : null;
   const lastSession = bySession[bySession.length - 1];
 
+  const siblingCategories = useMemo(() => {
+    const seen: string[] = [];
+    for (const e of siblingExercises) if (!seen.includes(e.category)) seen.push(e.category);
+    return seen;
+  }, [siblingExercises]);
+
+  function openEdit() {
+    if (!exercise) return;
+    setEditForm({
+      name: exercise.name,
+      category: exercise.category,
+      setupNote: exercise.setupNote ?? '',
+      unit: exercise.unit,
+      weightType: exercise.weightType,
+    });
+    setShowEdit(true);
+  }
+
+  async function saveEdit() {
+    if (!exercise || !editForm.name.trim()) return;
+    await db.exercises.update(exercise.id, {
+      name: editForm.name.trim(),
+      category: editForm.category.trim() || 'Other',
+      setupNote: editForm.setupNote.trim() || undefined,
+      unit: editForm.unit,
+      weightType: editForm.weightType,
+    });
+    setShowEdit(false);
+  }
+
   if (!exercise) {
-    return <div className="px-4 pt-16 text-center text-[var(--color-text-dim)]">Loading…</div>;
+    return <Spinner />;
   }
 
   return (
     <div className="px-4 pt-5">
-      <button onClick={() => navigate(-1)} className="mb-4 flex items-center gap-1 text-[var(--color-text-dim)]">
-        <ArrowLeft size={18} />
-      </button>
+      <div className="mb-4 flex items-center justify-between">
+        <button
+          onClick={() => navigate(-1)}
+          className="-m-2 flex items-center gap-1 p-2 text-[var(--color-text-dim)] transition active:scale-90"
+          aria-label="Back"
+        >
+          <ArrowLeft size={18} />
+        </button>
+        <button
+          onClick={openEdit}
+          className="-m-2 flex items-center gap-1 p-2 text-[var(--color-text-dim)] transition active:scale-90"
+          aria-label="Edit exercise"
+        >
+          <Pencil size={17} />
+        </button>
+      </div>
 
       <h1 className="text-2xl font-bold">{exercise.name}</h1>
       <div className="mb-1 mt-1 flex flex-wrap items-center gap-1.5 text-xs">
@@ -192,6 +260,76 @@ export function ExerciseDetail() {
             ))}
           </div>
         </>
+      )}
+
+      {showEdit && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60" onClick={() => setShowEdit(false)}>
+          <div
+            className="w-full max-w-[560px] rounded-t-3xl border-t-[3px] border-[var(--color-border)] bg-[var(--color-surface)] p-4"
+            style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 16px)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-lg font-bold">Edit Exercise</h2>
+              <button
+                onClick={() => setShowEdit(false)}
+                className="text-[var(--color-text-faint)] transition active:scale-90"
+                aria-label="Close"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="flex flex-col gap-2.5">
+              <input
+                autoFocus
+                value={editForm.name}
+                onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
+                placeholder="Exercise name"
+                className="rounded-lg border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 py-2.5 text-sm outline-none"
+              />
+              <CategorySelect
+                categories={siblingCategories}
+                value={editForm.category}
+                onChange={(category) => setEditForm((f) => ({ ...f, category }))}
+              />
+              <input
+                value={editForm.setupNote}
+                onChange={(e) => setEditForm((f) => ({ ...f, setupNote: e.target.value }))}
+                placeholder="Setup note (seat/pin, optional)"
+                className="rounded-lg border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 py-2.5 text-sm outline-none"
+              />
+              <select
+                value={editForm.unit}
+                onChange={(e) => setEditForm((f) => ({ ...f, unit: e.target.value as WeightUnit }))}
+                className="rounded-lg border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 py-2.5 text-sm outline-none"
+              >
+                {UNIT_OPTIONS.map((u) => (
+                  <option key={u.value} value={u.value}>
+                    {u.label}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={editForm.weightType ?? ''}
+                onChange={(e) => setEditForm((f) => ({ ...f, weightType: (e.target.value || null) as WeightType }))}
+                className="rounded-lg border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 py-2.5 text-sm outline-none"
+              >
+                {WEIGHT_TYPE_OPTIONS.map((o) => (
+                  <option key={o.label} value={o.value ?? ''}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={saveEdit}
+                disabled={!editForm.name.trim()}
+                className="btn-glow-primary mt-1 rounded-lg py-2.5 text-sm transition active:scale-[0.98] disabled:opacity-40 disabled:shadow-none"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

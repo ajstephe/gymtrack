@@ -4,6 +4,8 @@ import { ArrowLeft, Trash2 } from 'lucide-react';
 import { db } from '../data/db';
 import { formatWeight, formatVolume, trimNum } from '../lib/format';
 import { workingSets } from '../lib/calculations';
+import { confirmDialog } from '../store/dialogStore';
+import { Spinner } from '../components/Spinner';
 
 export function SessionDetail() {
   const { sessionId } = useParams<{ sessionId: string }>();
@@ -21,7 +23,7 @@ export function SessionDetail() {
   const exerciseById = new Map(exercises.map((e) => [e.id, e]));
 
   if (!session || !sets) {
-    return <div className="px-4 pt-16 text-center text-[var(--color-text-dim)]">Loading…</div>;
+    return <Spinner />;
   }
 
   const grouped = new Map<string, typeof sets>();
@@ -39,7 +41,13 @@ export function SessionDetail() {
 
   async function deleteSession() {
     if (!sessionId) return;
-    if (!confirm('Delete this workout? This cannot be undone.')) return;
+    const confirmed = await confirmDialog({
+      title: 'Delete this workout?',
+      message: 'This cannot be undone.',
+      confirmLabel: 'Delete',
+      danger: true,
+    });
+    if (!confirmed) return;
     await db.sets.where('sessionId').equals(sessionId).delete();
     await db.sessions.delete(sessionId);
     navigate('/history');
@@ -48,10 +56,18 @@ export function SessionDetail() {
   return (
     <div className="px-4 pt-5">
       <div className="mb-4 flex items-center justify-between">
-        <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-[var(--color-text-dim)]">
+        <button
+          onClick={() => navigate(-1)}
+          className="-m-2 flex items-center gap-1 p-2 text-[var(--color-text-dim)] transition active:scale-90"
+          aria-label="Back"
+        >
           <ArrowLeft size={18} />
         </button>
-        <button onClick={deleteSession} className="text-[var(--color-text-faint)] active:text-[var(--color-danger)]">
+        <button
+          onClick={deleteSession}
+          className="-m-2 p-2 text-[var(--color-text-faint)] transition active:scale-90 active:text-[var(--color-danger)]"
+          aria-label="Delete workout"
+        >
           <Trash2 size={18} />
         </button>
       </div>

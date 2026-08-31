@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   startOfMonth,
@@ -72,6 +72,25 @@ export function WorkoutCalendar({
     });
   }, [viewMonth, dayMap, sessionCategories]);
 
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
+
+  function onTouchStart(e: React.TouchEvent) {
+    const t = e.touches[0];
+    touchStart.current = { x: t.clientX, y: t.clientY };
+  }
+
+  function onTouchEnd(e: React.TouchEvent) {
+    const start = touchStart.current;
+    touchStart.current = null;
+    if (!start) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - start.x;
+    const dy = t.clientY - start.y;
+    if (Math.abs(dx) > 50 && Math.abs(dy) < 40) {
+      setViewMonth((m) => (dx < 0 ? addMonths(m, 1) : subMonths(m, 1)));
+    }
+  }
+
   const hasAnyWorkouts = finishedSessions.length > 0;
   const selectedDay = gridDays.find((d) => d.key === selectedKey) ?? null;
   const selectedSessions = (selectedDay?.sessionIds ?? [])
@@ -105,7 +124,7 @@ export function WorkoutCalendar({
         ))}
       </div>
 
-      <div className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-7 gap-1" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
         {gridDays.map((day) => {
           const inMonth = isSameMonth(day.date, viewMonth);
           const hasWorkout = day.categories.length > 0;

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Link } from 'react-router-dom';
-import { Search, Plus, ChevronRight, ChevronUp, ChevronDown, Trash2 } from 'lucide-react';
+import { Search, Plus, ChevronRight, ChevronUp, ChevronDown } from 'lucide-react';
 import { db, newId } from '../data/db';
 import type { Exercise, WeightUnit } from '../data/types';
 import { EmptyState } from '../components/EmptyState';
@@ -9,6 +9,7 @@ import { ExercisePhotoThumb } from '../components/ExercisePhoto';
 import { CategoryHeader } from '../components/CategoryHeader';
 import { Collapse } from '../components/Collapse';
 import { CategorySelect } from '../components/CategorySelect';
+import { SwipeToDelete } from '../components/SwipeToDelete';
 import { UNIT_OPTIONS } from '../lib/unitOptions';
 
 export function ExerciseLibrary() {
@@ -87,7 +88,6 @@ export function ExerciseLibrary() {
   }
 
   async function removeExercise(ex: Exercise) {
-    if (!confirm(`Remove "${ex.name}" from this gym? Past history you've logged stays intact.`)) return;
     await db.exercises.update(ex.id, { archived: true });
   }
 
@@ -149,48 +149,40 @@ export function ExerciseLibrary() {
               <Collapse open={!isCollapsed}>
               <div className="flex flex-col gap-1.5">
                 {items.map((ex, i) => (
-                  <div
-                    key={ex.id}
-                    className="card-bevel flex items-center rounded-xl border-2 border-[var(--color-border)] bg-[var(--color-surface)] pr-1.5 transition active:scale-[0.99]"
-                  >
-                    <Link to={`/exercises/${ex.id}`} className="flex min-w-0 flex-1 items-center gap-3 px-3.5 py-2.5">
-                      <ExercisePhotoThumb exerciseId={ex.id} size={36} />
-                      <div className="min-w-0 flex-1">
-                        <div className="truncate text-sm font-medium">{ex.name}</div>
-                        {ex.setupNote && (
-                          <div className="truncate text-xs text-[var(--color-text-faint)]">{ex.setupNote}</div>
-                        )}
-                      </div>
-                      <ChevronRight size={16} className="shrink-0 text-[var(--color-text-faint)]" />
-                    </Link>
-                    {!query.trim() && (
-                      <div className="flex shrink-0 flex-col">
-                        <button
-                          onClick={() => moveExercise(items, i, -1)}
-                          disabled={i === 0}
-                          className="rounded p-1 text-[var(--color-text-faint)] transition active:scale-90 disabled:opacity-20"
-                          aria-label={`Move ${ex.name} up`}
-                        >
-                          <ChevronUp size={14} />
-                        </button>
-                        <button
-                          onClick={() => moveExercise(items, i, 1)}
-                          disabled={i === items.length - 1}
-                          className="rounded p-1 text-[var(--color-text-faint)] transition active:scale-90 disabled:opacity-20"
-                          aria-label={`Move ${ex.name} down`}
-                        >
-                          <ChevronDown size={14} />
-                        </button>
-                      </div>
-                    )}
-                    <button
-                      onClick={() => removeExercise(ex)}
-                      className="shrink-0 rounded-lg p-2 text-[var(--color-text-faint)] transition active:scale-90 active:text-[var(--color-danger)]"
-                      aria-label={`Remove ${ex.name}`}
-                    >
-                      <Trash2 size={15} />
-                    </button>
-                  </div>
+                  <SwipeToDelete key={ex.id} onDelete={() => removeExercise(ex)} ariaLabel={`Remove ${ex.name}`}>
+                    <div className="card-bevel flex items-center rounded-xl border-2 border-[var(--color-border)] bg-[var(--color-surface)] pr-1.5 transition active:scale-[0.99]">
+                      <Link to={`/exercises/${ex.id}`} className="flex min-w-0 flex-1 items-center gap-3 px-3.5 py-2.5">
+                        <ExercisePhotoThumb exerciseId={ex.id} size={36} />
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-sm font-medium">{ex.name}</div>
+                          {ex.setupNote && (
+                            <div className="truncate text-xs text-[var(--color-text-faint)]">{ex.setupNote}</div>
+                          )}
+                        </div>
+                        <ChevronRight size={16} className="shrink-0 text-[var(--color-text-faint)]" />
+                      </Link>
+                      {!query.trim() && (
+                        <div className="flex shrink-0 flex-col">
+                          <button
+                            onClick={() => moveExercise(items, i, -1)}
+                            disabled={i === 0}
+                            className="rounded p-1 text-[var(--color-text-faint)] transition active:scale-90 disabled:opacity-20"
+                            aria-label={`Move ${ex.name} up`}
+                          >
+                            <ChevronUp size={14} />
+                          </button>
+                          <button
+                            onClick={() => moveExercise(items, i, 1)}
+                            disabled={i === items.length - 1}
+                            className="rounded p-1 text-[var(--color-text-faint)] transition active:scale-90 disabled:opacity-20"
+                            aria-label={`Move ${ex.name} down`}
+                          >
+                            <ChevronDown size={14} />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </SwipeToDelete>
                 ))}
               </div>
               </Collapse>

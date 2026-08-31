@@ -6,6 +6,8 @@ import { db } from '../data/db';
 import { isStoragePersisted, requestPersistentStorage } from '../lib/storagePersistence';
 import { buildBackup, downloadBackup, isValidBackup, restoreBackup } from '../lib/backup';
 import { notificationStatus, requestNotificationPermission, type NotificationStatus } from '../lib/notifications';
+import { confirmDialog } from '../store/dialogStore';
+import { showToast } from '../store/toastStore';
 
 export function Settings() {
   const navigate = useNavigate();
@@ -52,18 +54,24 @@ export function Settings() {
       const text = await file.text();
       const parsed = JSON.parse(text);
       if (!isValidBackup(parsed)) {
-        alert("This doesn't look like a valid Gym Tracker backup file.");
+        showToast("That doesn't look like a valid Gym Tracker backup file.", 'error');
         return;
       }
       const summary = `${parsed.exercises.length} exercises, ${parsed.sessions.length} workouts, ${parsed.sets.length} sets, ${parsed.photos.length} photos`;
-      if (!confirm(`Restore this backup (${summary})? This replaces all data currently in the app.`)) {
-        return;
-      }
+      const confirmed = await confirmDialog({
+        title: 'Restore this backup?',
+        message: `${summary}. This replaces all data currently in the app.`,
+        confirmLabel: 'Restore',
+        danger: true,
+      });
+      if (!confirmed) return;
       await restoreBackup(parsed);
-      alert('Backup restored.');
-      window.location.href = '/';
+      showToast('Backup restored.', 'success');
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 1000);
     } catch {
-      alert('Could not read that file — make sure it\'s an unmodified Gym Tracker backup.');
+      showToast("Could not read that file — make sure it's an unmodified Gym Tracker backup.", 'error');
     } finally {
       setBusy(null);
     }
@@ -71,7 +79,11 @@ export function Settings() {
 
   return (
     <div className="px-4 pt-5">
-      <button onClick={() => navigate(-1)} className="mb-4 flex items-center gap-1 text-[var(--color-text-dim)]">
+      <button
+        onClick={() => navigate(-1)}
+        className="-ml-2 -mr-2 -mt-2 mb-2 flex items-center gap-1 p-2 text-[var(--color-text-dim)] transition active:scale-90"
+        aria-label="Back"
+      >
         <ArrowLeft size={18} />
       </button>
 

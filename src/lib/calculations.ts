@@ -11,7 +11,7 @@ export function workingSets(sets: SetEntry[]): SetEntry[] {
   return sets.filter((s) => !s.isWarmup);
 }
 
-const WEIGHT_INCREMENT: Record<WeightUnit, number> = {
+export const WEIGHT_INCREMENT: Record<WeightUnit, number> = {
   kg: 2.5,
   lb: 5,
   stack: 1,

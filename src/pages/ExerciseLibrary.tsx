@@ -15,6 +15,98 @@ import { useEscapeToClose } from '../lib/useEscapeToClose';
 import { useDragReorder } from '../lib/useDragReorder';
 import { applyCategoryOrder, saveCategoryOrder } from '../lib/categoryOrder';
 
+/**
+ * One category's exercise rows, as its own component so it can own a single `useDragReorder`
+ * instance scoped to just its own items — a hook can't be called a variable number of times
+ * inside the parent's `.map()` over categories.
+ */
+function ExerciseGroupList({
+  items,
+  query,
+  onRemove,
+  onMove,
+  onReorder,
+}: {
+  items: Exercise[];
+  query: string;
+  onRemove: (ex: Exercise) => void;
+  onMove: (items: Exercise[], index: number, direction: -1 | 1) => void;
+  onReorder: (items: Exercise[], orderedIds: string[]) => void;
+}) {
+  const handleReorder = useCallback((orderedIds: string[]) => onReorder(items, orderedIds), [items, onReorder]);
+  const dragReorder = useDragReorder(items, (ex) => ex.id, handleReorder);
+  const canReorder = !query.trim();
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      {dragReorder.orderedItems.map((ex, i) => {
+        const isDragging = dragReorder.draggingKey === ex.id;
+        return (
+          <div
+            key={ex.id}
+            ref={dragReorder.registerNode(ex.id)}
+            style={
+              isDragging
+                ? { transform: `translateY(${dragReorder.dragY}px)`, position: 'relative', zIndex: 20 }
+                : undefined
+            }
+          >
+            <SwipeToDelete onDelete={() => onRemove(ex)} ariaLabel={`Remove ${ex.name}`}>
+              <div
+                onPointerDown={canReorder ? dragReorder.dragHandleProps(ex.id).onPointerDown : undefined}
+                className={`card-bevel flex items-center rounded-xl border-2 border-[var(--color-border)] bg-[var(--color-surface)] pr-1.5 transition active:scale-[0.99] ${
+                  isDragging ? 'shadow-lg' : ''
+                }`}
+                style={isDragging ? { touchAction: 'none' } : undefined}
+              >
+                <Link
+                  to={`/exercises/${ex.id}`}
+                  onClick={(e) => {
+                    if (dragReorder.justDraggedKeyRef.current === ex.id) {
+                      e.preventDefault();
+                      dragReorder.justDraggedKeyRef.current = null;
+                    }
+                  }}
+                  className="flex min-w-0 flex-1 items-center gap-3 px-3.5 py-2.5"
+                >
+                  <ExercisePhotoThumb exerciseId={ex.id} size={36} />
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-medium">{ex.name}</div>
+                    {ex.setupNote && (
+                      <div className="truncate text-xs text-[var(--color-text-faint)]">{ex.setupNote}</div>
+                    )}
+                  </div>
+                  <ChevronRight size={16} className="shrink-0 text-[var(--color-text-faint)]" />
+                </Link>
+                {canReorder && (
+                  <div className="flex shrink-0 flex-col">
+                    <button
+                      onClick={() => onMove(items, i, -1)}
+                      disabled={i === 0}
+                      className="rounded p-1 text-[var(--color-text-faint)] transition active:scale-90 disabled:opacity-20"
+                      aria-label={`Move ${ex.name} up`}
+                    >
+                      <ChevronUp size={14} />
+                    </button>
+                    <button
+                      onClick={() => onMove(items, i, 1)}
+                      disabled={i === items.length - 1}
+                      className="rounded p-1 text-[var(--color-text-faint)] transition active:scale-90 disabled:opacity-20"
+                      aria-label={`Move ${ex.name} down`}
+                    >
+                      <ChevronDown size={14} />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </SwipeToDelete>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export function ExerciseLibrary() {
   const routines = useLiveQuery(async () => (await db.routines.toArray()).filter((r) => !r.archived), []) ?? [];
   const [routineId, setRoutineId] = useState<string | null>(null);
@@ -122,6 +214,17 @@ export function ExerciseLibrary() {
     await Promise.all([db.exercises.update(a.id, { order: b.order }), db.exercises.update(b.id, { order: a.order })]);
   }
 
+  /**
+   * Persists a full new order for one category's exercises. `order` is a single numbering shared
+   * across the whole routine (not reset per category), so this permutes the category's *existing*
+   * set of order values onto the dragged sequence rather than renumbering to 1..N — renumbering
+   * would collide with other categories' exercises sitting in that same numeric space.
+   */
+  async function reorderExercises(items: Exercise[], orderedIds: string[]) {
+    const slots = [...items].map((e) => e.order).sort((a, b) => a - b);
+    await Promise.all(orderedIds.map((id, i) => db.exercises.update(id, { order: slots[i] })));
+  }
+
   return (
     <div className="px-4 pt-6">
       <h1 className="mb-4 text-2xl font-bold">Exercises</h1>
@@ -176,49 +279,18 @@ export function ExerciseLibrary() {
                 category={category}
                 count={items.length}
                 collapsed={isCollapsed}
-                onToggle={dragReorder.swallowDragClick(() => toggleCategory(category))}
+                onToggle={dragReorder.swallowDragClick(category, () => toggleCategory(category))}
                 onDragPointerDown={query.trim() ? undefined : dragReorder.dragHandleProps(category).onPointerDown}
                 dragging={isDragging}
               />
               <Collapse open={!isCollapsed}>
-              <div className="flex flex-col gap-1.5">
-                {items.map((ex, i) => (
-                  <SwipeToDelete key={ex.id} onDelete={() => removeExercise(ex)} ariaLabel={`Remove ${ex.name}`}>
-                    <div className="card-bevel flex items-center rounded-xl border-2 border-[var(--color-border)] bg-[var(--color-surface)] pr-1.5 transition active:scale-[0.99]">
-                      <Link to={`/exercises/${ex.id}`} className="flex min-w-0 flex-1 items-center gap-3 px-3.5 py-2.5">
-                        <ExercisePhotoThumb exerciseId={ex.id} size={36} />
-                        <div className="min-w-0 flex-1">
-                          <div className="truncate text-sm font-medium">{ex.name}</div>
-                          {ex.setupNote && (
-                            <div className="truncate text-xs text-[var(--color-text-faint)]">{ex.setupNote}</div>
-                          )}
-                        </div>
-                        <ChevronRight size={16} className="shrink-0 text-[var(--color-text-faint)]" />
-                      </Link>
-                      {!query.trim() && (
-                        <div className="flex shrink-0 flex-col">
-                          <button
-                            onClick={() => moveExercise(items, i, -1)}
-                            disabled={i === 0}
-                            className="rounded p-1 text-[var(--color-text-faint)] transition active:scale-90 disabled:opacity-20"
-                            aria-label={`Move ${ex.name} up`}
-                          >
-                            <ChevronUp size={14} />
-                          </button>
-                          <button
-                            onClick={() => moveExercise(items, i, 1)}
-                            disabled={i === items.length - 1}
-                            className="rounded p-1 text-[var(--color-text-faint)] transition active:scale-90 disabled:opacity-20"
-                            aria-label={`Move ${ex.name} down`}
-                          >
-                            <ChevronDown size={14} />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </SwipeToDelete>
-                ))}
-              </div>
+                <ExerciseGroupList
+                  items={items}
+                  query={query}
+                  onRemove={removeExercise}
+                  onMove={moveExercise}
+                  onReorder={reorderExercises}
+                />
               </Collapse>
             </div>
             );

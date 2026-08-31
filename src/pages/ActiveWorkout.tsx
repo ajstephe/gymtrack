@@ -355,7 +355,7 @@ export function ActiveWorkout() {
               onClick={() => setShowBodyWeight(true)}
               className="flex items-center gap-1 text-xs font-medium text-[var(--color-text-faint)] transition active:scale-95"
             >
-              <Scale size={12} /> Log weight
+              <Scale size={12} /> Log body weight
             </button>
             <button
               onClick={() => {
@@ -412,7 +412,7 @@ export function ActiveWorkout() {
               category={category}
               count={exList.length}
               collapsed={isCollapsed}
-              onToggle={dragReorder.swallowDragClick(() => toggleCategory(category))}
+              onToggle={dragReorder.swallowDragClick(category, () => toggleCategory(category))}
               onDragPointerDown={
                 exerciseQuery.trim() ? undefined : dragReorder.dragHandleProps(category).onPointerDown
               }

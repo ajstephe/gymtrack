@@ -143,7 +143,9 @@ export function WorkoutCalendar({
               } ${!inMonth ? 'opacity-30' : ''}`}
             >
               <span
-                className={
+                className={`flex h-6 w-6 items-center justify-center rounded-full ${
+                  isToday(day.date) ? (selected ? 'border-2 border-white' : 'border-2 border-[var(--color-primary)]') : ''
+                } ${
                   selected
                     ? 'font-bold text-white'
                     : isToday(day.date)
@@ -151,7 +153,7 @@ export function WorkoutCalendar({
                       : hasWorkout
                         ? 'text-[var(--color-text)]'
                         : 'text-[var(--color-text-faint)]'
-                }
+                }`}
               >
                 {format(day.date, 'd')}
               </span>

@@ -9,8 +9,11 @@ const FLIP_MS = 220;
  * Press-and-hold-to-drag reordering for a vertical list of blocks (e.g. category sections) whose
  * heights vary and aren't known in advance. A held press with minimal movement engages drag mode;
  * a quick tap is left alone so the item's own onClick (e.g. expand/collapse) still fires — except
- * `justDraggedRef` is flipped true for one tick right after a real drag ends, so a caller can
- * swallow the synthetic click a completed drag would otherwise also trigger.
+ * `justDraggedKeyRef` is set to whichever key just finished a real drag, so a caller can swallow
+ * the synthetic click a completed drag would otherwise also trigger on that specific item (one
+ * hook instance can back many clickable rows, e.g. every exercise in a category, so this has to
+ * be keyed rather than a single shared flag — otherwise dragging any one row would swallow the
+ * next tap on any *other* row too).
  *
  * Reordering compares the pointer's Y against each *other* item's actual measured midpoint
  * (not a fixed step size), so it stays correct when items are different heights — a collapsed
@@ -44,7 +47,7 @@ export function useDragReorder<T>(items: T[], keyFor: (item: T) => string, onReo
   const nodeRefs = useRef<Map<string, HTMLElement>>(new Map());
   const prevRects = useRef<Map<string, DOMRect>>(new Map());
   const longPressTimer = useRef<number | null>(null);
-  const justDraggedRef = useRef(false);
+  const justDraggedKeyRef = useRef<string | null>(null);
   const drag = useRef<{ key: string; pointerId: number; startClientY: number } | null>(null);
 
   function registerNode(key: string) {
@@ -166,7 +169,14 @@ export function useDragReorder<T>(items: T[], keyFor: (item: T) => string, onReo
       draggingKeyRef.current = null;
       setDraggingKey(null);
       setDragY(0);
-      justDraggedRef.current = true;
+      // Keyed, not a bare boolean: a hook instance backs every row in the category, not just the
+      // dragged one, so a flag shared across all of them would swallow the next tap on *any* row,
+      // not just the one actually dragged. Auto-clears shortly after in case nothing ever reads
+      // it — real drags rarely synthesize a click at all, so this may never even get consumed.
+      justDraggedKeyRef.current = d.key;
+      window.setTimeout(() => {
+        if (justDraggedKeyRef.current === d.key) justDraggedKeyRef.current = null;
+      }, 500);
       onReorder(orderRef.current);
     }
 
@@ -182,16 +192,19 @@ export function useDragReorder<T>(items: T[], keyFor: (item: T) => string, onReo
 
   const orderedItems = order.map((k) => items.find((i) => keyFor(i) === k)).filter((i): i is T => i != null);
 
-  /** Wrap a click handler with this so a click synthesized right after a completed drag is swallowed. */
-  function swallowDragClick(handler: () => void) {
+  /**
+   * Wrap a click handler with this so a click synthesized right after `key` was the one just
+   * dragged gets swallowed — use the same key you passed to `dragHandleProps`/`registerNode`.
+   */
+  function swallowDragClick(key: string, handler: () => void) {
     return () => {
-      if (justDraggedRef.current) {
-        justDraggedRef.current = false;
+      if (justDraggedKeyRef.current === key) {
+        justDraggedKeyRef.current = null;
         return;
       }
       handler();
     };
   }
 
-  return { orderedItems, registerNode, dragHandleProps, swallowDragClick, draggingKey, dragY };
+  return { orderedItems, registerNode, dragHandleProps, swallowDragClick, justDraggedKeyRef, draggingKey, dragY };
 }

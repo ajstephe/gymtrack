@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import {
@@ -22,6 +22,8 @@ import { workingSets, suggestNextTarget, personalRecords, WEIGHT_INCREMENT } fro
 import { UNIT_OPTIONS } from '../lib/unitOptions';
 import { canPlateCalc, plateBreakdown } from '../lib/plates';
 import { useEscapeToClose } from '../lib/useEscapeToClose';
+import { useDragReorder } from '../lib/useDragReorder';
+import { applyCategoryOrder, saveCategoryOrder } from '../lib/categoryOrder';
 import { hapticTap, hapticSuccess } from '../lib/haptics';
 import { showToast } from '../store/toastStore';
 import { ExercisePhotoThumb, ExercisePhotoButton } from '../components/ExercisePhoto';
@@ -92,19 +94,40 @@ export function ActiveWorkout() {
     return () => clearInterval(id);
   }, [session]);
 
-  const categories = useMemo(() => {
+  const naturalCategoryNames = useMemo(() => {
     if (!exercises) return [];
-    const order: string[] = [];
+    const seen: string[] = [];
+    for (const ex of exercises) if (!seen.includes(ex.category)) seen.push(ex.category);
+    return seen;
+  }, [exercises]);
+
+  const categoryOrderRow = useLiveQuery(
+    () => (session ? db.categoryOrders.get(session.routineId) : undefined),
+    [session?.routineId]
+  );
+  const orderedCategoryNames = useMemo(
+    () => applyCategoryOrder(naturalCategoryNames, categoryOrderRow?.order),
+    [naturalCategoryNames, categoryOrderRow]
+  );
+
+  const categoriesBase = useMemo(() => {
+    if (!exercises) return [];
     const map = new Map<string, Exercise[]>();
     for (const ex of exercises) {
-      if (!map.has(ex.category)) {
-        map.set(ex.category, []);
-        order.push(ex.category);
-      }
+      if (!map.has(ex.category)) map.set(ex.category, []);
       map.get(ex.category)!.push(ex);
     }
-    return order.map((cat) => ({ category: cat, exercises: map.get(cat)! }));
-  }, [exercises]);
+    return orderedCategoryNames.map((cat) => ({ category: cat, exercises: map.get(cat) ?? [] }));
+  }, [exercises, orderedCategoryNames]);
+
+  const persistCategoryOrder = useCallback(
+    (keys: string[]) => {
+      if (session) saveCategoryOrder(session.routineId, keys);
+    },
+    [session]
+  );
+  const dragReorder = useDragReorder(categoriesBase, (c) => c.category, persistCategoryOrder);
+  const categories = dragReorder.orderedItems;
 
   const visibleCategories = useMemo(() => {
     const q = exerciseQuery.trim().toLowerCase();
@@ -319,37 +342,39 @@ export function ActiveWorkout() {
 
   return (
     <div className="px-4 pt-5">
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex items-start justify-between">
         <div>
           <div className="text-xs font-medium uppercase tracking-wide text-[var(--color-text-faint)]">
             {routine?.name ?? '...'}
           </div>
           <h1 className="font-mono text-2xl font-bold tabular-nums">{formatDuration(elapsed)}</h1>
+          {/* Deliberately far from Finish (top-right) — these get tapped constantly mid-workout,
+              and sitting right under a workout-ending button invited fat-finger accidents. */}
+          <div className="mt-2 flex items-center gap-3">
+            <button
+              onClick={() => setShowBodyWeight(true)}
+              className="flex items-center gap-1 text-xs font-medium text-[var(--color-text-faint)] transition active:scale-95"
+            >
+              <Scale size={12} /> Log weight
+            </button>
+            <button
+              onClick={() => {
+                setNotesDraft(session.notes ?? '');
+                setShowNotes(true);
+              }}
+              className="flex items-center gap-1 text-xs font-medium text-[var(--color-text-faint)] transition active:scale-95"
+            >
+              <StickyNote size={12} /> {session.notes ? 'Notes' : 'Add note'}
+              {session.notes && <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-primary)]" />}
+            </button>
+          </div>
         </div>
-        <div className="flex flex-col items-end gap-1.5">
-          <button
-            onClick={finishWorkout}
-            className="btn-glow-pink rounded-xl px-4 py-2.5 text-sm active:scale-[0.96]"
-          >
-            Finish
-          </button>
-          <button
-            onClick={() => setShowBodyWeight(true)}
-            className="flex items-center gap-1 text-xs font-medium text-[var(--color-text-faint)] transition active:scale-95"
-          >
-            <Scale size={12} /> Log weight
-          </button>
-          <button
-            onClick={() => {
-              setNotesDraft(session.notes ?? '');
-              setShowNotes(true);
-            }}
-            className="flex items-center gap-1 text-xs font-medium text-[var(--color-text-faint)] transition active:scale-95"
-          >
-            <StickyNote size={12} /> {session.notes ? 'Notes' : 'Add note'}
-            {session.notes && <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-primary)]" />}
-          </button>
-        </div>
+        <button
+          onClick={finishWorkout}
+          className="btn-glow-pink shrink-0 rounded-xl px-4 py-2.5 text-sm active:scale-[0.96]"
+        >
+          Finish
+        </button>
       </div>
 
       {exercises && exercises.length > 6 && (
@@ -372,13 +397,26 @@ export function ActiveWorkout() {
       <div className="flex flex-col gap-5 pb-24">
         {visibleCategories.map(({ category, exercises: exList }) => {
           const isCollapsed = !exerciseQuery.trim() && collapsedCategories.has(category);
+          const isDragging = dragReorder.draggingKey === category;
           return (
-          <div key={category}>
+          <div
+            key={category}
+            ref={dragReorder.registerNode(category)}
+            style={
+              isDragging
+                ? { transform: `translateY(${dragReorder.dragY}px)`, position: 'relative', zIndex: 20 }
+                : undefined
+            }
+          >
             <CategoryHeader
               category={category}
               count={exList.length}
               collapsed={isCollapsed}
-              onToggle={() => toggleCategory(category)}
+              onToggle={dragReorder.swallowDragClick(() => toggleCategory(category))}
+              onDragPointerDown={
+                exerciseQuery.trim() ? undefined : dragReorder.dragHandleProps(category).onPointerDown
+              }
+              dragging={isDragging}
             />
             <Collapse open={!isCollapsed}>
             <div className="flex flex-col gap-2">

@@ -54,6 +54,13 @@ export interface BodyWeightEntry {
   sessionId?: string;
 }
 
+/** User's preferred display order for a routine's exercise categories ("body areas") — shared
+ * between the Exercises tab and an active workout so a reorder made in one shows up in the other. */
+export interface CategoryOrder {
+  routineId: string;
+  order: string[];
+}
+
 export interface SetEntry {
   id: string;
   sessionId: string;

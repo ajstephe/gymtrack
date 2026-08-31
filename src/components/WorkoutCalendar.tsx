@@ -134,9 +134,9 @@ export function WorkoutCalendar({
               key={day.key}
               onClick={() => hasWorkout && setSelectedKey(selected ? null : day.key)}
               disabled={!hasWorkout}
-              className={`flex aspect-square flex-col items-center justify-center gap-1 rounded-lg text-xs transition-colors ${
+              className={`flex aspect-square scale-100 flex-col items-center justify-center gap-1 rounded-lg text-xs transition-all ${
                 selected
-                  ? 'bg-[var(--color-primary)]/20 ring-2 ring-[var(--color-primary)]'
+                  ? 'card-bevel scale-110 border-2 border-[var(--color-border)] bg-[var(--color-primary)]'
                   : hasWorkout
                     ? 'border-2 border-[var(--color-border)] bg-[var(--color-surface)]'
                     : ''
@@ -144,11 +144,13 @@ export function WorkoutCalendar({
             >
               <span
                 className={
-                  isToday(day.date)
-                    ? 'font-bold text-[var(--color-primary)]'
-                    : hasWorkout
-                      ? 'text-[var(--color-text)]'
-                      : 'text-[var(--color-text-faint)]'
+                  selected
+                    ? 'font-bold text-white'
+                    : isToday(day.date)
+                      ? 'font-bold text-[var(--color-primary)]'
+                      : hasWorkout
+                        ? 'text-[var(--color-text)]'
+                        : 'text-[var(--color-text-faint)]'
                 }
               >
                 {format(day.date, 'd')}
@@ -158,7 +160,10 @@ export function WorkoutCalendar({
                   <span
                     key={cat}
                     className="h-1.5 w-1.5 rotate-45"
-                    style={{ background: categoryColor(cat) }}
+                    style={{
+                      background: selected ? '#fffdf5' : categoryColor(cat),
+                      boxShadow: selected ? `0 0 0 1px ${categoryColor(cat)}` : undefined,
+                    }}
                   />
                 ))}
               </span>

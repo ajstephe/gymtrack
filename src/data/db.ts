@@ -1,5 +1,13 @@
 import Dexie, { type EntityTable } from 'dexie';
-import type { Routine, Exercise, WorkoutSession, SetEntry, ExercisePhoto, BodyWeightEntry } from './types';
+import type {
+  Routine,
+  Exercise,
+  WorkoutSession,
+  SetEntry,
+  ExercisePhoto,
+  BodyWeightEntry,
+  CategoryOrder,
+} from './types';
 import { seedRoutines, seedExercises } from './seedData';
 
 export const db = new Dexie('GymTrackerDB') as Dexie & {
@@ -9,6 +17,7 @@ export const db = new Dexie('GymTrackerDB') as Dexie & {
   sets: EntityTable<SetEntry, 'id'>;
   photos: EntityTable<ExercisePhoto, 'exerciseId'>;
   bodyWeights: EntityTable<BodyWeightEntry, 'id'>;
+  categoryOrders: EntityTable<CategoryOrder, 'routineId'>;
 };
 
 // Note: boolean fields (e.g. archived) are intentionally NOT indexed —
@@ -26,6 +35,10 @@ db.version(2).stores({
 
 db.version(3).stores({
   bodyWeights: 'id, date, sessionId',
+});
+
+db.version(4).stores({
+  categoryOrders: 'routineId',
 });
 
 let seedPromise: Promise<void> | null = null;

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Link } from 'react-router-dom';
 import { Search, Plus, ChevronRight, ChevronUp, ChevronDown } from 'lucide-react';
@@ -12,6 +12,8 @@ import { CategorySelect } from '../components/CategorySelect';
 import { SwipeToDelete } from '../components/SwipeToDelete';
 import { UNIT_OPTIONS } from '../lib/unitOptions';
 import { useEscapeToClose } from '../lib/useEscapeToClose';
+import { useDragReorder } from '../lib/useDragReorder';
+import { applyCategoryOrder, saveCategoryOrder } from '../lib/categoryOrder';
 
 export function ExerciseLibrary() {
   const routines = useLiveQuery(async () => (await db.routines.toArray()).filter((r) => !r.archived), []) ?? [];
@@ -36,6 +38,15 @@ export function ExerciseLibrary() {
     return seen;
   }, [exercises]);
 
+  const categoryOrderRow = useLiveQuery(
+    () => (activeRoutineId ? db.categoryOrders.get(activeRoutineId) : undefined),
+    [activeRoutineId]
+  );
+  const orderedCategoryNames = useMemo(
+    () => applyCategoryOrder(allCategories, categoryOrderRow?.order),
+    [allCategories, categoryOrderRow]
+  );
+
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
   const categoriesInitialized = useRef<string | null>(null);
 
@@ -55,21 +66,31 @@ export function ExerciseLibrary() {
     });
   }
 
-  const grouped = useMemo(() => {
+  const fullGrouped = useMemo(() => {
     if (!exercises) return [];
-    const q = query.trim().toLowerCase();
-    const filtered = q ? exercises.filter((e) => e.name.toLowerCase().includes(q)) : exercises;
-    const order: string[] = [];
-    const map = new Map<string, typeof exercises>();
-    for (const ex of filtered) {
-      if (!map.has(ex.category)) {
-        map.set(ex.category, []);
-        order.push(ex.category);
-      }
+    const map = new Map<string, Exercise[]>();
+    for (const ex of exercises) {
+      if (!map.has(ex.category)) map.set(ex.category, []);
       map.get(ex.category)!.push(ex);
     }
-    return order.map((cat) => ({ category: cat, items: map.get(cat)! }));
-  }, [exercises, query]);
+    return orderedCategoryNames.map((cat) => ({ category: cat, items: map.get(cat) ?? [] }));
+  }, [exercises, orderedCategoryNames]);
+
+  const persistCategoryOrder = useCallback(
+    (keys: string[]) => {
+      if (activeRoutineId) saveCategoryOrder(activeRoutineId, keys);
+    },
+    [activeRoutineId]
+  );
+  const dragReorder = useDragReorder(fullGrouped, (g) => g.category, persistCategoryOrder);
+
+  const grouped = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return dragReorder.orderedItems;
+    return dragReorder.orderedItems
+      .map((g) => ({ category: g.category, items: g.items.filter((e) => e.name.toLowerCase().includes(q)) }))
+      .filter((g) => g.items.length > 0);
+  }, [dragReorder.orderedItems, query]);
 
   async function addExercise() {
     if (!form.name.trim() || !activeRoutineId) return;
@@ -140,13 +161,24 @@ export function ExerciseLibrary() {
         ) : (
           grouped.map(({ category, items }) => {
             const isCollapsed = !query.trim() && collapsedCategories.has(category);
+            const isDragging = dragReorder.draggingKey === category;
             return (
-            <div key={category}>
+            <div
+              key={category}
+              ref={dragReorder.registerNode(category)}
+              style={
+                isDragging
+                  ? { transform: `translateY(${dragReorder.dragY}px)`, position: 'relative', zIndex: 20 }
+                  : undefined
+              }
+            >
               <CategoryHeader
                 category={category}
                 count={items.length}
                 collapsed={isCollapsed}
-                onToggle={() => toggleCategory(category)}
+                onToggle={dragReorder.swallowDragClick(() => toggleCategory(category))}
+                onDragPointerDown={query.trim() ? undefined : dragReorder.dragHandleProps(category).onPointerDown}
+                dragging={isDragging}
               />
               <Collapse open={!isCollapsed}>
               <div className="flex flex-col gap-1.5">

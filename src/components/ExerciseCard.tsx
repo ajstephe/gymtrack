@@ -474,7 +474,8 @@ export function ExerciseCard({
               <div className="mb-3">
                 <div className="mb-1.5 flex items-center justify-between">
                   <span className="text-[10px] uppercase tracking-wide text-[var(--color-text-faint)]">
-                    Rate of Perceived Exertion (RPE){draft.rpe !== '' ? ` — ${trimNum(parseFloat(draft.rpe))}` : ''}
+                    <span aria-hidden="true">😣</span> Rate of Perceived Exertion (RPE)
+                    {draft.rpe !== '' ? ` — ${trimNum(parseFloat(draft.rpe))}` : ''}
                   </span>
                   {draft.rpe !== '' && (
                     <button

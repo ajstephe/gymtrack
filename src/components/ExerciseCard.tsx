@@ -1,15 +1,16 @@
 import { useState } from 'react';
-import { ChevronDown, Check, X, Flame, Plus, Minus, SlidersHorizontal, Repeat } from 'lucide-react';
+import { ChevronDown, Check, X, Flame, Plus, Minus, SlidersHorizontal, Repeat, Trophy } from 'lucide-react';
 import { formatWeight, trimNum } from '../lib/format';
 import { canPlateCalc, plateBreakdown } from '../lib/plates';
 import type { Exercise, SetEntry } from '../data/types';
-import type { ProgressionSuggestion } from '../lib/calculations';
+import type { PersonalRecord, ProgressionSuggestion } from '../lib/calculations';
 import { ExercisePhotoThumb, ExercisePhotoButton } from './ExercisePhoto';
 import { Collapse } from './Collapse';
 import { SwipeToDelete } from './SwipeToDelete';
 
 const REST_PRESETS = [60, 90, 120, 180];
 const RPE_OPTIONS = [6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10];
+const WEIGHT_UNIT_OPTIONS = ['kg', 'lb', 'stack'] as const;
 
 export interface Draft {
   weight: string;
@@ -32,6 +33,7 @@ export function ExerciseCard({
   last,
   lastTop,
   suggestion,
+  personalBest,
   draft,
   onUpdateDraft,
   onLogSet,
@@ -39,6 +41,7 @@ export function ExerciseCard({
   onSetUnit,
   onBumpWeight,
   onBumpReps,
+  onUpdateSetupNote,
   editingSetId,
   editDraft,
   onEditDraftChange,
@@ -56,13 +59,15 @@ export function ExerciseCard({
   last: SetEntry[] | null;
   lastTop: SetEntry | null;
   suggestion: ProgressionSuggestion | null;
+  personalBest: PersonalRecord | null;
   draft: Draft;
   onUpdateDraft: (patch: Partial<Draft>) => void;
   onLogSet: () => void;
   onQuickRepeat: () => void;
-  onSetUnit: (unit: 'kg' | 'lb') => void;
+  onSetUnit: (unit: 'kg' | 'lb' | 'stack') => void;
   onBumpWeight: (delta: 1 | -1) => void;
   onBumpReps: (delta: 1 | -1) => void;
+  onUpdateSetupNote: (note: string) => void;
   editingSetId: string | null;
   editDraft: SetEditDraft;
   onEditDraftChange: (patch: Partial<SetEditDraft>) => void;
@@ -74,6 +79,18 @@ export function ExerciseCard({
   onSetRestDuration: (n: number) => void;
 }) {
   const [optionsOpen, setOptionsOpen] = useState(false);
+  const [editingNote, setEditingNote] = useState(false);
+  const [noteDraft, setNoteDraft] = useState('');
+
+  function startEditNote() {
+    setNoteDraft(ex.setupNote ?? '');
+    setEditingNote(true);
+  }
+
+  function commitNote() {
+    onUpdateSetupNote(noteDraft.trim());
+    setEditingNote(false);
+  }
 
   return (
     <div
@@ -130,10 +147,51 @@ export function ExerciseCard({
         >
           <div className="mb-3 flex items-center gap-2.5">
             <ExercisePhotoButton exerciseId={ex.id} size={44} />
-            <span className="text-xs text-[var(--color-text-faint)]">
-              {ex.setupNote ?? 'Snap a photo so you remember this machine'}
-            </span>
+            {editingNote ? (
+              <div className="flex flex-1 items-center gap-1.5">
+                <input
+                  autoFocus
+                  value={noteDraft}
+                  onChange={(e) => setNoteDraft(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') commitNote();
+                    if (e.key === 'Escape') setEditingNote(false);
+                  }}
+                  onBlur={commitNote}
+                  placeholder="Setup note (seat/pin)"
+                  className="min-w-0 flex-1 rounded-lg border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] px-2 py-1 text-xs outline-none"
+                />
+                <button
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={commitNote}
+                  className="shrink-0 text-[var(--color-primary)] transition active:scale-90"
+                  aria-label="Save note"
+                >
+                  <Check size={16} strokeWidth={3} />
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={startEditNote}
+                className="min-w-0 flex-1 truncate text-left text-xs text-[var(--color-text-faint)] transition active:opacity-70"
+              >
+                {ex.setupNote ?? 'Snap a photo so you remember this machine — tap to add a setup note'}
+              </button>
+            )}
           </div>
+
+          {personalBest && (
+            <div className="mb-3 flex items-center gap-2 rounded-xl bg-[var(--color-amber)]/12 px-3 py-2">
+              <Trophy size={14} className="shrink-0 text-[var(--color-amber)]" />
+              <span className="text-xs font-medium text-[var(--color-text-dim)]">
+                Personal best:{' '}
+                <span className="font-bold text-[var(--color-text)]">
+                  {formatWeight(personalBest.weight, ex.unit)} × {personalBest.reps}
+                </span>
+              </span>
+            </div>
+          )}
 
           {last && last.length > 0 && (
             <div className="mb-3">
@@ -281,28 +339,24 @@ export function ExerciseCard({
 
           <div className="mb-2.5 flex gap-2">
             <label className="flex-1">
-              <span className="mb-1 flex items-center justify-between">
-                <span className="text-[10px] uppercase tracking-wide text-[var(--color-text-faint)]">
-                  {ex.unit === 'bodyweight' ? 'Weight (opt.)' : ex.unit === 'stack' ? 'Stack #' : 'Weight'}
+              <span className="mb-1 flex h-5 items-center justify-between">
+                <span className="text-[10px] uppercase tracking-wide text-[var(--color-text-faint)]">Weight</span>
+                <span className="flex shrink-0 overflow-hidden rounded-full border-2 border-[var(--color-border)]">
+                  {WEIGHT_UNIT_OPTIONS.map((u) => (
+                    <button
+                      key={u}
+                      type="button"
+                      onClick={() => onSetUnit(u)}
+                      className={`px-1.5 py-0.5 text-[10px] font-semibold transition active:scale-95 ${
+                        ex.unit === u
+                          ? 'bg-[var(--color-primary)] text-white'
+                          : 'bg-[var(--color-surface-2)] text-[var(--color-text-faint)]'
+                      }`}
+                    >
+                      {u === 'stack' ? 'Stack #' : u}
+                    </button>
+                  ))}
                 </span>
-                {(ex.unit === 'kg' || ex.unit === 'lb') && (
-                  <span className="flex overflow-hidden rounded-full border-2 border-[var(--color-border)]">
-                    {(['kg', 'lb'] as const).map((u) => (
-                      <button
-                        key={u}
-                        type="button"
-                        onClick={() => onSetUnit(u)}
-                        className={`px-2 py-0.5 text-[10px] font-semibold transition active:scale-95 ${
-                          ex.unit === u
-                            ? 'bg-[var(--color-primary)] text-white'
-                            : 'bg-[var(--color-surface-2)] text-[var(--color-text-faint)]'
-                        }`}
-                      >
-                        {u}
-                      </button>
-                    ))}
-                  </span>
-                )}
               </span>
               <div className="flex items-center gap-1">
                 <button
@@ -332,7 +386,9 @@ export function ExerciseCard({
               </div>
             </label>
             <label className="flex-1">
-              <span className="mb-1 block text-[10px] uppercase tracking-wide text-[var(--color-text-faint)]">Reps</span>
+              <span className="mb-1 flex h-5 items-center text-[10px] uppercase tracking-wide text-[var(--color-text-faint)]">
+                Reps
+              </span>
               <div className="flex items-center gap-1">
                 <button
                   type="button"

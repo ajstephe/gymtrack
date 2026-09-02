@@ -92,6 +92,8 @@ export function ActiveWorkout() {
     });
   }
 
+  const personalBests = useMemo(() => personalRecords(workingSets(allSets ?? [])), [allSets]);
+
   const setsByExercise = useMemo(() => {
     const map = new Map<string, SetEntry[]>();
     for (const s of sessionSets ?? []) {
@@ -222,8 +224,12 @@ export function ActiveWorkout() {
     updateDraft(ex.id, { reps: String(next) });
   }
 
-  async function setUnit(exId: string, unit: 'kg' | 'lb') {
+  async function setUnit(exId: string, unit: 'kg' | 'lb' | 'stack') {
     await db.exercises.update(exId, { unit });
+  }
+
+  async function updateSetupNote(exId: string, note: string) {
+    await db.exercises.update(exId, { setupNote: note || undefined });
   }
 
   async function addExerciseOnTheFly(form: NewExerciseForm) {
@@ -373,6 +379,7 @@ export function ActiveWorkout() {
                       last={last}
                       lastTop={lastTop}
                       suggestion={suggestion}
+                      personalBest={personalBests.get(ex.id) ?? null}
                       draft={draft}
                       onUpdateDraft={(patch) => updateDraft(ex.id, patch)}
                       onLogSet={() => logSet(ex)}
@@ -380,6 +387,7 @@ export function ActiveWorkout() {
                       onSetUnit={(unit) => setUnit(ex.id, unit)}
                       onBumpWeight={(delta) => bumpWeight(ex, delta)}
                       onBumpReps={(delta) => bumpReps(ex, delta)}
+                      onUpdateSetupNote={(note) => updateSetupNote(ex.id, note)}
                       editingSetId={editingSetId}
                       editDraft={editDraft}
                       onEditDraftChange={(patch) => setEditDraft((d) => ({ ...d, ...patch }))}

@@ -280,37 +280,40 @@ export function ActiveWorkout() {
 
   return (
     <div className="px-4 pt-5">
-      <div className="mb-4 flex items-start justify-between">
-        <div>
-          <div className="text-xs font-medium uppercase tracking-wide text-[var(--color-text-faint)]">
-            {routine?.name ?? '...'}
-          </div>
-          <h1 className="font-mono text-2xl font-bold tabular-nums">{formatDuration(elapsed)}</h1>
-          {/* Deliberately far from Finish (top-right) — these get tapped constantly mid-workout,
-              and sitting right under a workout-ending button invited fat-finger accidents. */}
-          <div className="mt-2 flex items-center gap-3">
-            <button
-              onClick={() => setShowBodyWeight(true)}
-              className="flex items-center gap-1 text-xs font-medium text-[var(--color-text-faint)] transition active:scale-95"
-            >
-              <Scale size={12} /> Log body weight
-            </button>
-            <button
-              onClick={() => setShowNotes(true)}
-              className="flex items-center gap-1 text-xs font-medium text-[var(--color-text-faint)] transition active:scale-95"
-            >
-              <StickyNote size={12} /> {session.notes ? 'Notes' : 'Add note'}
-              {session.notes && <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-primary)]" />}
-            </button>
-          </div>
+      <div className="mb-4 pr-24">
+        <div className="text-xs font-medium uppercase tracking-wide text-[var(--color-text-faint)]">
+          {routine?.name ?? '...'}
         </div>
-        <button
-          onClick={finishWorkout}
-          className="btn-glow-pink shrink-0 rounded-xl px-4 py-2.5 text-sm active:scale-[0.96]"
-        >
-          Finish
-        </button>
+        <h1 className="font-mono text-2xl font-bold tabular-nums">{formatDuration(elapsed)}</h1>
+        {/* Deliberately far from Finish (floating top-right) — these get tapped constantly
+            mid-workout, and sitting right under a workout-ending button invited fat-finger
+            accidents. */}
+        <div className="mt-2 flex items-center gap-3">
+          <button
+            onClick={() => setShowBodyWeight(true)}
+            className="flex items-center gap-1 text-xs font-medium text-[var(--color-text-faint)] transition active:scale-95"
+          >
+            <Scale size={12} /> Log body weight
+          </button>
+          <button
+            onClick={() => setShowNotes(true)}
+            className="flex items-center gap-1 text-xs font-medium text-[var(--color-text-faint)] transition active:scale-95"
+          >
+            <StickyNote size={12} /> {session.notes ? 'Notes' : 'Add note'}
+            {session.notes && <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-primary)]" />}
+          </button>
+        </div>
       </div>
+
+      {/* Fixed rather than the page's old inline placement — this keeps Finish reachable with one
+          tap no matter how far down the (often 15+ exercise) list the user has scrolled. */}
+      <button
+        onClick={finishWorkout}
+        className="btn-glow-pink fixed right-4 z-30 shrink-0 rounded-xl px-4 py-2.5 text-sm active:scale-[0.96]"
+        style={{ top: 'calc(env(safe-area-inset-top) + 20px)' }}
+      >
+        Finish
+      </button>
 
       {exercises && exercises.length > 6 && (
         <div className="mb-4 flex items-center gap-2 rounded-xl border-2 border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2.5">

@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { ChevronDown, Check, X, Flame, Plus, Minus, SlidersHorizontal, Repeat, Trophy } from 'lucide-react';
 import { formatWeight, trimNum } from '../lib/format';
-import { canPlateCalc, plateBreakdown } from '../lib/plates';
+import { canPlateCalc, plateBreakdown, STANDARD_BAR_WEIGHT } from '../lib/plates';
 import type { Exercise, SetEntry } from '../data/types';
 import type { PersonalRecord, ProgressionSuggestion } from '../lib/calculations';
 import { ExercisePhotoThumb, ExercisePhotoButton } from './ExercisePhoto';
 import { Collapse } from './Collapse';
 import { SwipeToDelete } from './SwipeToDelete';
+import { PlateDiagram } from './PlateDiagram';
 
 const REST_PRESETS = [60, 90, 120, 180];
 const RPE_OPTIONS = [6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10];
@@ -423,23 +424,34 @@ export function ExerciseCard({
             draft.weight &&
             !Number.isNaN(parseFloat(draft.weight)) &&
             (() => {
-              const { plates, remainder } = plateBreakdown(parseFloat(draft.weight), ex.unit);
+              const perSide = parseFloat(draft.weight);
+              const { plates, remainder } = plateBreakdown(perSide, ex.unit);
+              const barWeight = ex.weightType === 'each_bar' ? STANDARD_BAR_WEIGHT[ex.unit] : 0;
+              const total = perSide * 2 + barWeight;
               return (
-                <div className="mb-2.5 -mt-1 flex flex-wrap items-center gap-1.5 text-xs text-[var(--color-text-faint)]">
-                  <span className="uppercase tracking-wide">Plates/side</span>
-                  {plates.length === 0 ? (
-                    <span>—</span>
-                  ) : (
-                    plates.map((p, i) => (
-                      <span
-                        key={i}
-                        className="rounded-md border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] px-1.5 py-0.5 font-mono font-bold text-[var(--color-text)]"
-                      >
-                        {trimNum(p)}
-                      </span>
-                    ))
-                  )}
-                  {remainder > 0.01 && <span className="text-[var(--color-amber)]">+{trimNum(remainder)} short</span>}
+                <div className="mb-2.5 -mt-1 rounded-xl border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 py-2.5">
+                  <div className="mb-0.5 text-center font-mono text-lg font-bold">
+                    {trimNum(total)}
+                    {ex.unit}
+                    <span className="ml-1 text-xs font-normal text-[var(--color-text-faint)]">total</span>
+                  </div>
+                  <PlateDiagram plates={plates} unit={ex.unit} />
+                  <div className="mt-1 flex flex-wrap items-center justify-center gap-1.5 text-xs text-[var(--color-text-faint)]">
+                    <span className="uppercase tracking-wide">Per side</span>
+                    {plates.length === 0 ? (
+                      <span>—</span>
+                    ) : (
+                      plates.map((p, i) => (
+                        <span
+                          key={i}
+                          className="rounded-md border-2 border-[var(--color-border)] bg-[var(--color-surface)] px-1.5 py-0.5 font-mono font-bold text-[var(--color-text)]"
+                        >
+                          {trimNum(p)}
+                        </span>
+                      ))
+                    )}
+                    {remainder > 0.01 && <span className="text-[var(--color-amber)]">+{trimNum(remainder)} short</span>}
+                  </div>
                 </div>
               );
             })()}

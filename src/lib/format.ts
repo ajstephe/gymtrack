@@ -7,7 +7,7 @@ export function formatWeight(weight: number, unit: WeightUnit): string {
 }
 
 export function trimNum(n: number): string {
-  return Number.isInteger(n) ? String(n) : n.toFixed(1).replace(/\.0$/, '');
+  return Number.isInteger(n) ? String(n) : String(Math.round(n * 100) / 100);
 }
 
 export const weightTypeLabel: Record<Exclude<WeightType, null>, string> = {

@@ -72,6 +72,41 @@ export function weeklyVolumeSeries(sets: SetEntry[], weeks = 8) {
   return buckets;
 }
 
+export interface WeeklyCategoryBucket {
+  label: string;
+  weekStart: Date;
+  total: number;
+  byCategory: Record<string, number>;
+}
+
+/** Same weekly bucketing as weeklyVolumeSeries, but volume is also split out per exercise category. */
+export function weeklyVolumeByCategory(
+  sets: SetEntry[],
+  categoryOf: Map<string, string>,
+  weeks = 8
+): { buckets: WeeklyCategoryBucket[]; categories: string[] } {
+  const now = new Date();
+  const buckets: WeeklyCategoryBucket[] = [];
+  const categoriesSeen = new Set<string>();
+  for (let i = weeks - 1; i >= 0; i--) {
+    const weekDate = subWeeks(now, i);
+    const { start, end } = weekBounds(weekDate);
+    const byCategory: Record<string, number> = {};
+    let total = 0;
+    for (const s of sets) {
+      const d = parseISO(s.completedAt);
+      if (d < start || d > end) continue;
+      const category = categoryOf.get(s.exerciseId) ?? 'Other';
+      const vol = s.weight * s.reps;
+      byCategory[category] = (byCategory[category] ?? 0) + vol;
+      total += vol;
+      categoriesSeen.add(category);
+    }
+    buckets.push({ label: format(start, 'MMM d'), weekStart: start, total: Math.round(total), byCategory });
+  }
+  return { buckets, categories: [...categoriesSeen] };
+}
+
 export function currentStreak(sessions: WorkoutSession[]): number {
   const days = Array.from(
     new Set(sessions.map((s) => format(parseISO(s.startedAt), 'yyyy-MM-dd')))

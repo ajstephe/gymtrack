@@ -5,6 +5,33 @@ const PLATE_SETS: Record<'kg' | 'lb', number[]> = {
   lb: [45, 35, 25, 10, 5, 2.5],
 };
 
+/** Standard Olympic bar weight, used when a "per side + bar" exercise needs a total load. */
+export const STANDARD_BAR_WEIGHT: Record<'kg' | 'lb', number> = { kg: 20, lb: 45 };
+
+/** Color by rank (biggest plate first) rather than by literal weight, so it stays consistent across kg and lb sets. */
+const RANK_COLORS = [
+  'var(--color-crimson)',
+  'var(--color-primary)',
+  'var(--color-amber)',
+  'var(--color-azure)',
+  'var(--color-lime)',
+  'var(--color-primary-2)',
+  'var(--color-text-faint)',
+];
+
+/** Height by rank (biggest plate first) — plates shrink visually as they get lighter. */
+const RANK_HEIGHTS = [64, 58, 52, 46, 40, 34, 28];
+
+export function plateColor(weight: number, unit: 'kg' | 'lb'): string {
+  const rank = PLATE_SETS[unit].indexOf(weight);
+  return RANK_COLORS[rank] ?? RANK_COLORS[RANK_COLORS.length - 1];
+}
+
+export function plateHeight(weight: number, unit: 'kg' | 'lb'): number {
+  const rank = PLATE_SETS[unit].indexOf(weight);
+  return RANK_HEIGHTS[rank] ?? RANK_HEIGHTS[RANK_HEIGHTS.length - 1];
+}
+
 /** Plate math only makes sense for a real barbell/plate-loaded weight in kg or lb. */
 export function canPlateCalc(unit: WeightUnit): unit is 'kg' | 'lb' {
   return unit === 'kg' || unit === 'lb';

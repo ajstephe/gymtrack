@@ -2,15 +2,51 @@ import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Link } from 'react-router-dom';
 import { Flame, TrendingUp, CalendarCheck, Trophy, ChevronRight, Play, Plus, Scale, Settings as SettingsIcon } from 'lucide-react';
-import { BarChart, Bar, LineChart, Line, ResponsiveContainer, XAxis, Tooltip } from 'recharts';
+import { BarChart, Bar, LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 import { db } from '../data/db';
 import { useSessionStore } from '../store/sessionStore';
 import { StatCard } from '../components/StatCard';
 import { EmptyState } from '../components/EmptyState';
 import { LogBodyWeightSheet } from '../components/LogBodyWeightSheet';
-import { currentStreak, weeklyVolumeSeries, recentPRs, workingSets } from '../lib/calculations';
+import { currentStreak, weeklyVolumeSeries, weeklyVolumeByCategory, recentPRs, workingSets } from '../lib/calculations';
 import { formatVolume, formatWeight, trimNum } from '../lib/format';
+import { categoryColorInSet } from '../lib/categoryColors';
 import { startOfMonth } from 'date-fns';
+import type { BodyWeightEntry } from '../data/types';
+
+interface VolumeTooltipEntry {
+  dataKey: string;
+  value: number;
+  color: string;
+}
+
+function VolumeTooltip({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean;
+  payload?: VolumeTooltipEntry[];
+  label?: string;
+}) {
+  if (!active || !payload || payload.length === 0) return null;
+  const entries = payload.filter((p) => p.value > 0);
+  const total = entries.reduce((sum, p) => sum + p.value, 0);
+  return (
+    <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-2)] px-2.5 py-2 text-xs">
+      <div className="mb-1 font-bold">{label}</div>
+      {entries.map((p) => (
+        <div key={p.dataKey} className="flex items-center gap-1.5">
+          <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: p.color }} />
+          <span>
+            {p.dataKey}: {p.value.toLocaleString()} kg
+          </span>
+        </div>
+      ))}
+      <div className="mt-1 font-bold">Total: {total.toLocaleString()} kg</div>
+    </div>
+  );
+}
 
 export function Dashboard() {
   const sessions = useLiveQuery(() => db.sessions.toArray(), []) ?? [];
@@ -18,7 +54,7 @@ export function Dashboard() {
   const exercises = useLiveQuery(() => db.exercises.toArray(), []) ?? [];
   const bodyWeights = useLiveQuery(() => db.bodyWeights.toArray(), []) ?? [];
   const activeSessionId = useSessionStore((s) => s.activeSessionId);
-  const [showBodyWeight, setShowBodyWeight] = useState(false);
+  const [bwSheet, setBwSheet] = useState<'add' | BodyWeightEntry | null>(null);
 
   const finishedSessions = sessions.filter((s) => s.endedAt);
   const activeSession = sessions.find((s) => s.id === activeSessionId && !s.endedAt);
@@ -35,6 +71,14 @@ export function Dashboard() {
 
   const prs = recentPRs(working, 7).slice(0, 5);
   const exerciseById = new Map(exercises.map((e) => [e.id, e]));
+
+  const categoryOf = new Map(exercises.map((e) => [e.id, e.category]));
+  const { buckets: weeklyByCategory, categories: volumeCategories } = weeklyVolumeByCategory(working, categoryOf, 8);
+  const weeklyChartData = weeklyByCategory.map((b) => {
+    const row: Record<string, number | string> = { label: b.label };
+    for (const cat of volumeCategories) row[cat] = Math.round(b.byCategory[cat] ?? 0);
+    return row;
+  });
 
   const sortedBW = [...bodyWeights].sort((a, b) => a.date.localeCompare(b.date));
   const latestBW = sortedBW[sortedBW.length - 1];
@@ -124,28 +168,43 @@ export function Dashboard() {
             Log a workout to see your volume trend
           </div>
         ) : (
-          <ResponsiveContainer width="100%" height={140}>
-            <BarChart data={weekly} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
-              <XAxis
-                dataKey="label"
-                tick={{ fill: 'var(--color-text-faint)', fontSize: 10 }}
-                axisLine={false}
-                tickLine={false}
-                interval={1}
-              />
-              <Tooltip
-                cursor={{ fill: 'var(--color-surface-2)' }}
-                contentStyle={{
-                  background: 'var(--color-surface-2)',
-                  border: '1px solid var(--color-border)',
-                  borderRadius: 8,
-                  fontSize: 12,
-                }}
-                formatter={(v) => [`${Number(v).toLocaleString()} kg`, 'Volume']}
-              />
-              <Bar dataKey="volume" radius={[6, 6, 0, 0]} fill="var(--color-primary)" maxBarSize={22} />
-            </BarChart>
-          </ResponsiveContainer>
+          <>
+            <p className="mb-2 text-xs text-[var(--color-text-faint)]">
+              Per week, split by body part
+            </p>
+            <ResponsiveContainer width="100%" height={140}>
+              <BarChart data={weeklyChartData} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
+                <XAxis
+                  dataKey="label"
+                  tick={{ fill: 'var(--color-text-faint)', fontSize: 10 }}
+                  axisLine={false}
+                  tickLine={false}
+                  interval={1}
+                />
+                <YAxis hide domain={[0, 'dataMax']} />
+                <Tooltip cursor={{ fill: 'var(--color-surface-2)' }} content={<VolumeTooltip />} />
+                {volumeCategories.map((cat, i) => (
+                  <Bar
+                    key={cat}
+                    dataKey={cat}
+                    stackId="volume"
+                    fill={categoryColorInSet(cat, volumeCategories)}
+                    maxBarSize={22}
+                    isAnimationActive={false}
+                    radius={i === volumeCategories.length - 1 ? [6, 6, 0, 0] : undefined}
+                  />
+                ))}
+              </BarChart>
+            </ResponsiveContainer>
+            <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
+              {volumeCategories.map((cat) => (
+                <span key={cat} className="flex items-center gap-1 text-[10px] font-medium text-[var(--color-text-faint)]">
+                  <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: categoryColorInSet(cat, volumeCategories) }} />
+                  {cat}
+                </span>
+              ))}
+            </div>
+          </>
         )}
       </div>
 
@@ -156,7 +215,7 @@ export function Dashboard() {
             Body Weight
           </h2>
           <button
-            onClick={() => setShowBodyWeight(true)}
+            onClick={() => setBwSheet('add')}
             className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--color-surface-2)] transition active:scale-90"
             aria-label="Log body weight"
           >
@@ -169,7 +228,11 @@ export function Dashboard() {
           </div>
         ) : (
           <>
-            <div className="mb-1 flex items-baseline gap-2">
+            <button
+              onClick={() => setBwSheet(latestBW)}
+              className="mb-1 flex items-baseline gap-2 transition active:opacity-70"
+              aria-label="Edit latest body weight"
+            >
               <span className="text-2xl font-bold tabular-nums">
                 {trimNum(latestBW.weight)}
                 {latestBW.unit}
@@ -181,7 +244,7 @@ export function Dashboard() {
                   {latestBW.unit} vs last
                 </span>
               )}
-            </div>
+            </button>
             {bwChartData.length > 1 && (
               <ResponsiveContainer width="100%" height={100}>
                 <LineChart data={bwChartData} margin={{ top: 4, right: 4, left: 4, bottom: 0 }}>
@@ -248,8 +311,12 @@ export function Dashboard() {
         )}
       </div>
 
-      {showBodyWeight && (
-        <LogBodyWeightSheet defaultUnit={latestBW?.unit ?? 'kg'} onClose={() => setShowBodyWeight(false)} />
+      {bwSheet && (
+        <LogBodyWeightSheet
+          defaultUnit={latestBW?.unit ?? 'kg'}
+          editEntry={typeof bwSheet === 'object' ? bwSheet : undefined}
+          onClose={() => setBwSheet(null)}
+        />
       )}
     </div>
   );

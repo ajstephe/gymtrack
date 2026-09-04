@@ -16,3 +16,13 @@ export function categoryColor(category: string): string {
   for (let i = 0; i < category.length; i++) hash = (hash * 31 + category.charCodeAt(i)) | 0;
   return PALETTE[Math.abs(hash) % PALETTE.length];
 }
+
+/**
+ * Color for one category among a known, fixed list — assigns by position instead of hashing, so
+ * two categories shown side by side (e.g. stacked chart segments) never collide on the same
+ * color the way two unrelated hashes occasionally do.
+ */
+export function categoryColorInSet(category: string, allCategories: string[]): string {
+  const index = allCategories.indexOf(category);
+  return PALETTE[index < 0 ? 0 : index % PALETTE.length];
+}

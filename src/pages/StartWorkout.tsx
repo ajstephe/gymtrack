@@ -7,6 +7,8 @@ import type { Routine } from '../data/types';
 import { useSessionStore } from '../store/sessionStore';
 import { SwipeToDelete } from '../components/SwipeToDelete';
 import { useEscapeToClose } from '../lib/useEscapeToClose';
+import { ALL_PLATE_SIZES_KG } from '../lib/plates';
+import { trimNum } from '../lib/format';
 
 const accentColor: Record<string, string> = {
   crimson: 'var(--color-crimson)',
@@ -28,6 +30,7 @@ export function StartWorkout() {
 
   const [editingRoutine, setEditingRoutine] = useState<Routine | null>(null);
   const [editName, setEditName] = useState('');
+  const [editPlates, setEditPlates] = useState<number[]>(ALL_PLATE_SIZES_KG);
   useEscapeToClose(!!editingRoutine, () => setEditingRoutine(null));
 
   const exerciseCounts = useLiveQuery(async () => {
@@ -62,12 +65,17 @@ export function StartWorkout() {
 
   function openEdit(r: Routine) {
     setEditName(r.name);
+    setEditPlates(r.plateInventory ?? ALL_PLATE_SIZES_KG);
     setEditingRoutine(r);
+  }
+
+  function togglePlate(size: number) {
+    setEditPlates((prev) => (prev.includes(size) ? prev.filter((p) => p !== size) : [...prev, size]));
   }
 
   async function saveEdit() {
     if (!editingRoutine || !editName.trim()) return;
-    await db.routines.update(editingRoutine.id, { name: editName.trim() });
+    await db.routines.update(editingRoutine.id, { name: editName.trim(), plateInventory: editPlates });
     setEditingRoutine(null);
   }
 
@@ -122,7 +130,7 @@ export function StartWorkout() {
               <button
                 onClick={() => openEdit(r)}
                 className="shrink-0 rounded-lg p-2 text-[var(--color-text-faint)] transition active:scale-90"
-                aria-label={`Rename ${r.name}`}
+                aria-label={`Edit ${r.name}`}
               >
                 <Pencil size={15} />
               </button>
@@ -168,7 +176,7 @@ export function StartWorkout() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-lg font-bold">Rename Gym</h2>
+              <h2 className="text-lg font-bold">Edit Gym</h2>
               <button
                 onClick={() => setEditingRoutine(null)}
                 className="text-[var(--color-text-faint)] transition active:scale-90"
@@ -185,6 +193,28 @@ export function StartWorkout() {
               placeholder="Gym name"
               className="mb-3 w-full rounded-lg border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 py-2.5 text-sm outline-none"
             />
+            <div className="mb-1.5 text-[10px] uppercase tracking-wide text-[var(--color-text-faint)]">
+              Plates available (kg)
+            </div>
+            <p className="mb-2 text-xs text-[var(--color-text-faint)]">
+              Used by the Plate Calculator to work out what's actually on hand here.
+            </p>
+            <div className="mb-3 flex flex-wrap gap-1.5">
+              {ALL_PLATE_SIZES_KG.map((size) => (
+                <button
+                  key={size}
+                  type="button"
+                  onClick={() => togglePlate(size)}
+                  className={`rounded-full border-2 border-[var(--color-border)] px-3 py-1.5 text-sm font-semibold transition active:scale-95 ${
+                    editPlates.includes(size)
+                      ? 'bg-[var(--color-primary)] text-white'
+                      : 'bg-[var(--color-surface-2)] text-[var(--color-text-faint)]'
+                  }`}
+                >
+                  {trimNum(size)}
+                </button>
+              ))}
+            </div>
             <button
               onClick={saveEdit}
               disabled={!editName.trim()}

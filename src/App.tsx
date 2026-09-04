@@ -13,6 +13,7 @@ import { History } from './pages/History';
 import { Calendar } from './pages/Calendar';
 import { SessionDetail } from './pages/SessionDetail';
 import { ExerciseLibrary } from './pages/ExerciseLibrary';
+import { PlateCalculator } from './pages/PlateCalculator';
 import { Settings } from './pages/Settings';
 
 // Dashboard and ExerciseDetail are the only two pages that pull in recharts — the single
@@ -23,7 +24,7 @@ const ExerciseDetail = lazy(() => import('./pages/ExerciseDetail').then((m) => (
 
 // Top-level tab-bar destinations. Anything else is a "push" (drill-in) route, which gets a
 // directional slide transition and an edge-swipe-back gesture instead of the flat tab fade.
-const TAB_ROUTES = new Set(['/', '/train', '/history', '/calendar', '/exercises']);
+const TAB_ROUTES = new Set(['/', '/train', '/history', '/calendar', '/exercises', '/plates']);
 const EDGE_ZONE_PX = 24;
 const SWIPE_BACK_THRESHOLD_PX = 70;
 const SWIPE_BACK_MAX_DRIFT_PX = 60;
@@ -97,6 +98,7 @@ function App() {
               <Route path="/calendar" element={<Calendar />} />
               <Route path="/exercises" element={<ExerciseLibrary />} />
               <Route path="/exercises/:exerciseId" element={<ExerciseDetail />} />
+              <Route path="/plates" element={<PlateCalculator />} />
               <Route path="/settings" element={<Settings />} />
             </Routes>
           </Suspense>

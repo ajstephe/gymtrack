@@ -1,11 +1,12 @@
 export type WeightUnit = 'kg' | 'lb' | 'stack' | 'bodyweight';
 export type WeightType = 'each' | 'total' | 'bar' | 'each_bar' | null;
-export type BarType = 'standard' | 'short' | 'ez';
 
 export interface Routine {
   id: string;
   name: string;
   accent: string;
+  /** Which kg plates this gym actually has on hand, for the plate calculator. Undefined means "all standard sizes". */
+  plateInventory?: number[];
   archived?: boolean;
 }
 
@@ -27,8 +28,6 @@ export interface Exercise {
   category: string;
   unit: WeightUnit;
   weightType: WeightType;
-  /** Only meaningful for weightType 'each_bar' — which bar's weight to add to the total. Defaults to 'standard'. */
-  barType?: BarType;
   setupNote?: string;
   order: number;
   isCustom?: boolean;

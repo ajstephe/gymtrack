@@ -8,7 +8,14 @@ import { useSessionStore } from '../store/sessionStore';
 import { StatCard } from '../components/StatCard';
 import { EmptyState } from '../components/EmptyState';
 import { LogBodyWeightSheet } from '../components/LogBodyWeightSheet';
-import { currentStreak, weeklyVolumeSeries, weeklyVolumeByCategory, recentPRs, workingSets } from '../lib/calculations';
+import {
+  currentStreak,
+  weeklyVolumeSeries,
+  weeklyVolumeByCategory,
+  recentPRs,
+  workingSets,
+  sessionBests,
+} from '../lib/calculations';
 import { formatVolume, formatWeight, trimNum } from '../lib/format';
 import { categoryColorInSet } from '../lib/categoryColors';
 import { startOfMonth } from 'date-fns';
@@ -55,6 +62,7 @@ export function Dashboard() {
   const bodyWeights = useLiveQuery(() => db.bodyWeights.toArray(), []) ?? [];
   const activeSessionId = useSessionStore((s) => s.activeSessionId);
   const [bwSheet, setBwSheet] = useState<'add' | BodyWeightEntry | null>(null);
+  const [trackedExerciseId, setTrackedExerciseId] = useState<string | null>(null);
 
   const finishedSessions = sessions.filter((s) => s.endedAt);
   const activeSession = sessions.find((s) => s.id === activeSessionId && !s.endedAt);
@@ -71,6 +79,24 @@ export function Dashboard() {
 
   const prs = recentPRs(working, 7).slice(0, 5);
   const exerciseById = new Map(exercises.map((e) => [e.id, e]));
+
+  const lastTrainedAt = new Map<string, string>();
+  for (const s of working) {
+    const prev = lastTrainedAt.get(s.exerciseId);
+    if (!prev || s.completedAt > prev) lastTrainedAt.set(s.exerciseId, s.completedAt);
+  }
+  const trackableExercises = exercises
+    .filter((e) => (e.unit === 'kg' || e.unit === 'lb') && lastTrainedAt.has(e.id))
+    .sort((a, b) => (lastTrainedAt.get(b.id) ?? '').localeCompare(lastTrainedAt.get(a.id) ?? ''));
+  const effectiveTrackedId = trackedExerciseId ?? trackableExercises[0]?.id ?? null;
+  const trackedExercise = trackableExercises.find((e) => e.id === effectiveTrackedId);
+  const progressData = trackedExercise
+    ? sessionBests(working.filter((s) => s.exerciseId === trackedExercise.id)).map((row) => ({
+        date: new Date(row.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+        weight: row.weight,
+        e1rm: row.e1rm,
+      }))
+    : [];
 
   const categoryOf = new Map(exercises.map((e) => [e.id, e.category]));
   const { buckets: weeklyByCategory, categories: volumeCategories } = weeklyVolumeByCategory(working, categoryOf, 8);
@@ -203,6 +229,94 @@ export function Dashboard() {
                   {cat}
                 </span>
               ))}
+            </div>
+          </>
+        )}
+      </div>
+
+      <div className="card-bevel mb-5 rounded-2xl border-2 border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <h2 className="flex shrink-0 items-center gap-1.5 text-sm font-semibold text-[var(--color-text-dim)]">
+            <TrendingUp size={14} />
+            Strength Progress
+          </h2>
+          {trackableExercises.length > 0 && (
+            <select
+              value={effectiveTrackedId ?? ''}
+              onChange={(e) => setTrackedExerciseId(e.target.value)}
+              className="min-w-0 max-w-[60%] rounded-full border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] px-2.5 py-1 text-xs font-medium outline-none"
+            >
+              {trackableExercises.map((ex) => (
+                <option key={ex.id} value={ex.id}>
+                  {ex.name}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
+        {!trackedExercise || progressData.length < 2 ? (
+          <div className="flex h-32 items-center justify-center px-4 text-center text-sm text-[var(--color-text-faint)]">
+            Log at least two sessions of a kg or lb exercise to see a trend
+          </div>
+        ) : (
+          <>
+            <ResponsiveContainer width="100%" height={140}>
+              <LineChart data={progressData} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
+                <XAxis
+                  dataKey="date"
+                  tick={{ fill: 'var(--color-text-faint)', fontSize: 10 }}
+                  axisLine={false}
+                  tickLine={false}
+                  interval="preserveStartEnd"
+                />
+                <YAxis
+                  tick={{ fill: 'var(--color-text-faint)', fontSize: 10 }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={32}
+                  domain={['dataMin - 5', 'dataMax + 5']}
+                />
+                <Tooltip
+                  contentStyle={{
+                    background: 'var(--color-surface-2)',
+                    border: '1px solid var(--color-border)',
+                    borderRadius: 8,
+                    fontSize: 12,
+                  }}
+                  formatter={(v, name) => [
+                    formatWeight(Number(v), trackedExercise.unit),
+                    name === 'e1rm' ? 'Est. 1RM' : 'Max weight',
+                  ]}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="weight"
+                  name="weight"
+                  stroke="var(--color-primary)"
+                  strokeWidth={2.5}
+                  dot={{ r: 3, fill: 'var(--color-primary)' }}
+                  isAnimationActive={false}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="e1rm"
+                  name="e1rm"
+                  stroke="var(--color-crimson)"
+                  strokeWidth={2.5}
+                  dot={{ r: 3, fill: 'var(--color-crimson)' }}
+                  isAnimationActive={false}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+            <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
+              <span className="flex items-center gap-1 text-[10px] font-medium text-[var(--color-text-faint)]">
+                <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: 'var(--color-primary)' }} />
+                Max weight
+              </span>
+              <span className="flex items-center gap-1 text-[10px] font-medium text-[var(--color-text-faint)]">
+                <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: 'var(--color-crimson)' }} />
+                Est. 1RM
+              </span>
             </div>
           </>
         )}

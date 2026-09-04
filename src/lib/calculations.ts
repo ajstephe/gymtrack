@@ -198,3 +198,28 @@ export function topSetOf(sets: SetEntry[]): SetEntry | null {
   if (sets.length === 0) return null;
   return [...sets].sort((a, b) => b.weight - a.weight || b.reps - a.reps)[0];
 }
+
+export interface SessionBest {
+  date: string;
+  weight: number;
+  reps: number;
+  e1rm: number;
+}
+
+/** One exercise's top working set per session, with its estimated 1RM — for charting max weight
+ * lifted vs. projected one-rep max over time. */
+export function sessionBests(sets: SetEntry[]): SessionBest[] {
+  const bySession = new Map<string, SetEntry[]>();
+  for (const s of workingSets(sets)) {
+    const arr = bySession.get(s.sessionId) ?? [];
+    arr.push(s);
+    bySession.set(s.sessionId, arr);
+  }
+  const result: SessionBest[] = [];
+  for (const sessionSets of bySession.values()) {
+    const top = topSetOf(sessionSets);
+    if (!top) continue;
+    result.push({ date: top.completedAt, weight: top.weight, reps: top.reps, e1rm: Math.round(estOneRepMax(top.weight, top.reps)) });
+  }
+  return result.sort((a, b) => a.date.localeCompare(b.date));
+}

@@ -94,7 +94,9 @@ export function ExerciseCard({
   return (
     <div
       id={`ex-${ex.id}`}
-      className="card-bevel overflow-hidden rounded-2xl border-2 border-[var(--color-border)] bg-[var(--color-surface)] transition-colors"
+      className={`card-bevel overflow-hidden rounded-2xl border-2 transition-colors ${
+        isOpen ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/5' : 'border-[var(--color-border)] bg-[var(--color-surface)]'
+      }`}
     >
       <div className="flex items-center">
         <button

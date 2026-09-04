@@ -62,6 +62,7 @@ export function Dashboard() {
   const bodyWeights = useLiveQuery(() => db.bodyWeights.toArray(), []) ?? [];
   const activeSessionId = useSessionStore((s) => s.activeSessionId);
   const [bwSheet, setBwSheet] = useState<'add' | BodyWeightEntry | null>(null);
+  const [trackedCategory, setTrackedCategory] = useState<string | null>(null);
   const [trackedExerciseId, setTrackedExerciseId] = useState<string | null>(null);
 
   const finishedSessions = sessions.filter((s) => s.endedAt);
@@ -85,11 +86,28 @@ export function Dashboard() {
     const prev = lastTrainedAt.get(s.exerciseId);
     if (!prev || s.completedAt > prev) lastTrainedAt.set(s.exerciseId, s.completedAt);
   }
-  const trackableExercises = exercises
-    .filter((e) => (e.unit === 'kg' || e.unit === 'lb') && lastTrainedAt.has(e.id))
+  const trackableExercises = exercises.filter((e) => (e.unit === 'kg' || e.unit === 'lb') && lastTrainedAt.has(e.id));
+
+  const categoryLastTrained = new Map<string, string>();
+  for (const e of trackableExercises) {
+    const t = lastTrainedAt.get(e.id)!;
+    const prev = categoryLastTrained.get(e.category);
+    if (!prev || t > prev) categoryLastTrained.set(e.category, t);
+  }
+  const trackableCategories = [...categoryLastTrained.keys()].sort((a, b) =>
+    (categoryLastTrained.get(b) ?? '').localeCompare(categoryLastTrained.get(a) ?? '')
+  );
+  const effectiveCategory =
+    trackedCategory && trackableCategories.includes(trackedCategory) ? trackedCategory : (trackableCategories[0] ?? null);
+
+  const exercisesInCategory = trackableExercises
+    .filter((e) => e.category === effectiveCategory)
     .sort((a, b) => (lastTrainedAt.get(b.id) ?? '').localeCompare(lastTrainedAt.get(a.id) ?? ''));
-  const effectiveTrackedId = trackedExerciseId ?? trackableExercises[0]?.id ?? null;
-  const trackedExercise = trackableExercises.find((e) => e.id === effectiveTrackedId);
+  const effectiveTrackedId =
+    trackedExerciseId && exercisesInCategory.some((e) => e.id === trackedExerciseId)
+      ? trackedExerciseId
+      : (exercisesInCategory[0]?.id ?? null);
+  const trackedExercise = exercisesInCategory.find((e) => e.id === effectiveTrackedId);
   const progressData = trackedExercise
     ? sessionBests(working.filter((s) => s.exerciseId === trackedExercise.id)).map((row) => ({
         date: new Date(row.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
@@ -235,25 +253,39 @@ export function Dashboard() {
       </div>
 
       <div className="card-bevel mb-5 rounded-2xl border-2 border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-        <div className="mb-2 flex items-center justify-between gap-2">
-          <h2 className="flex shrink-0 items-center gap-1.5 text-sm font-semibold text-[var(--color-text-dim)]">
-            <TrendingUp size={14} />
-            Strength Progress
-          </h2>
-          {trackableExercises.length > 0 && (
+        <h2 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-[var(--color-text-dim)]">
+          <TrendingUp size={14} />
+          Strength Progress
+        </h2>
+        {trackableCategories.length > 0 && (
+          <div className="mb-2 flex gap-1.5">
+            <select
+              value={effectiveCategory ?? ''}
+              onChange={(e) => {
+                setTrackedCategory(e.target.value);
+                setTrackedExerciseId(null);
+              }}
+              className="min-w-0 flex-1 rounded-full border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] px-2.5 py-1 text-xs font-medium outline-none"
+            >
+              {trackableCategories.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </select>
             <select
               value={effectiveTrackedId ?? ''}
               onChange={(e) => setTrackedExerciseId(e.target.value)}
-              className="min-w-0 max-w-[60%] rounded-full border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] px-2.5 py-1 text-xs font-medium outline-none"
+              className="min-w-0 flex-1 rounded-full border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] px-2.5 py-1 text-xs font-medium outline-none"
             >
-              {trackableExercises.map((ex) => (
+              {exercisesInCategory.map((ex) => (
                 <option key={ex.id} value={ex.id}>
                   {ex.name}
                 </option>
               ))}
             </select>
-          )}
-        </div>
+          </div>
+        )}
         {!trackedExercise || progressData.length < 2 ? (
           <div className="flex h-32 items-center justify-center px-4 text-center text-sm text-[var(--color-text-faint)]">
             Log at least two sessions of a kg or lb exercise to see a trend

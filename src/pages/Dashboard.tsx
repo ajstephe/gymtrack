@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Link } from 'react-router-dom';
-import { Flame, TrendingUp, CalendarCheck, Trophy, ChevronRight, Play, Plus, Scale, Settings as SettingsIcon } from 'lucide-react';
+import { Flame, TrendingUp, CalendarCheck, Trophy, ChevronRight, Play, Plus, Pencil, Scale, Settings as SettingsIcon } from 'lucide-react';
 import { BarChart, Bar, LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 import { db } from '../data/db';
 import { useSessionStore } from '../store/sessionStore';
@@ -230,12 +230,15 @@ export function Dashboard() {
           <>
             <button
               onClick={() => setBwSheet(latestBW)}
-              className="mb-1 flex items-baseline gap-2 transition active:opacity-70"
+              className="mb-1 flex items-center gap-2 transition active:opacity-70"
               aria-label="Edit latest body weight"
             >
               <span className="text-2xl font-bold tabular-nums">
                 {trimNum(latestBW.weight)}
                 {latestBW.unit}
+              </span>
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--color-surface-2)] text-[var(--color-text-faint)]">
+                <Pencil size={11} />
               </span>
               {bwDelta != null && (
                 <span className="text-xs font-medium text-[var(--color-text-faint)]">

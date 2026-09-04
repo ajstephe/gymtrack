@@ -86,23 +86,38 @@ export function Dashboard() {
     const prev = lastTrainedAt.get(s.exerciseId);
     if (!prev || s.completedAt > prev) lastTrainedAt.set(s.exerciseId, s.completedAt);
   }
-  const trackableExercises = exercises.filter((e) => (e.unit === 'kg' || e.unit === 'lb') && lastTrainedAt.has(e.id));
+  // Every configured kg/lb exercise is selectable, trained or not — recently-trained ones (and
+  // categories containing them) sort first, everything else falls back to alphabetical.
+  const trackableExercises = exercises.filter((e) => !e.archived && (e.unit === 'kg' || e.unit === 'lb'));
 
   const categoryLastTrained = new Map<string, string>();
   for (const e of trackableExercises) {
-    const t = lastTrainedAt.get(e.id)!;
+    const t = lastTrainedAt.get(e.id);
+    if (!t) continue;
     const prev = categoryLastTrained.get(e.category);
     if (!prev || t > prev) categoryLastTrained.set(e.category, t);
   }
-  const trackableCategories = [...categoryLastTrained.keys()].sort((a, b) =>
-    (categoryLastTrained.get(b) ?? '').localeCompare(categoryLastTrained.get(a) ?? '')
-  );
+  const trackableCategories = [...new Set(trackableExercises.map((e) => e.category))].sort((a, b) => {
+    const ta = categoryLastTrained.get(a);
+    const tb = categoryLastTrained.get(b);
+    if (ta && tb) return tb.localeCompare(ta);
+    if (ta && !tb) return -1;
+    if (!ta && tb) return 1;
+    return a.localeCompare(b);
+  });
   const effectiveCategory =
     trackedCategory && trackableCategories.includes(trackedCategory) ? trackedCategory : (trackableCategories[0] ?? null);
 
   const exercisesInCategory = trackableExercises
     .filter((e) => e.category === effectiveCategory)
-    .sort((a, b) => (lastTrainedAt.get(b.id) ?? '').localeCompare(lastTrainedAt.get(a.id) ?? ''));
+    .sort((a, b) => {
+      const ta = lastTrainedAt.get(a.id);
+      const tb = lastTrainedAt.get(b.id);
+      if (ta && tb) return tb.localeCompare(ta);
+      if (ta && !tb) return -1;
+      if (!ta && tb) return 1;
+      return a.name.localeCompare(b.name);
+    });
   const effectiveTrackedId =
     trackedExerciseId && exercisesInCategory.some((e) => e.id === trackedExerciseId)
       ? trackedExerciseId

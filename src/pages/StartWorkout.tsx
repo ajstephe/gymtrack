@@ -7,8 +7,13 @@ import type { Routine } from '../data/types';
 import { useSessionStore } from '../store/sessionStore';
 import { SwipeToDelete } from '../components/SwipeToDelete';
 import { useEscapeToClose } from '../lib/useEscapeToClose';
-import { ALL_PLATE_SIZES_KG } from '../lib/plates';
+import { ALL_PLATE_SIZES, type PlateUnit } from '../lib/plates';
 import { trimNum } from '../lib/format';
+
+const DEFAULT_PLATE_INVENTORY: Record<PlateUnit, number[]> = {
+  kg: ALL_PLATE_SIZES.kg,
+  lb: ALL_PLATE_SIZES.lb,
+};
 
 const accentColor: Record<string, string> = {
   crimson: 'var(--color-crimson)',
@@ -30,7 +35,8 @@ export function StartWorkout() {
 
   const [editingRoutine, setEditingRoutine] = useState<Routine | null>(null);
   const [editName, setEditName] = useState('');
-  const [editPlates, setEditPlates] = useState<number[]>(ALL_PLATE_SIZES_KG);
+  const [editPlates, setEditPlates] = useState<Record<PlateUnit, number[]>>(DEFAULT_PLATE_INVENTORY);
+  const [editPlateUnit, setEditPlateUnit] = useState<PlateUnit>('kg');
   useEscapeToClose(!!editingRoutine, () => setEditingRoutine(null));
 
   const exerciseCounts = useLiveQuery(async () => {
@@ -65,12 +71,19 @@ export function StartWorkout() {
 
   function openEdit(r: Routine) {
     setEditName(r.name);
-    setEditPlates(r.plateInventory ?? ALL_PLATE_SIZES_KG);
+    setEditPlates({
+      kg: r.plateInventory?.kg ?? ALL_PLATE_SIZES.kg,
+      lb: r.plateInventory?.lb ?? ALL_PLATE_SIZES.lb,
+    });
+    setEditPlateUnit('kg');
     setEditingRoutine(r);
   }
 
-  function togglePlate(size: number) {
-    setEditPlates((prev) => (prev.includes(size) ? prev.filter((p) => p !== size) : [...prev, size]));
+  function togglePlate(unit: PlateUnit, size: number) {
+    setEditPlates((prev) => ({
+      ...prev,
+      [unit]: prev[unit].includes(size) ? prev[unit].filter((p) => p !== size) : [...prev[unit], size],
+    }));
   }
 
   async function saveEdit() {
@@ -193,20 +206,38 @@ export function StartWorkout() {
               placeholder="Gym name"
               className="mb-3 w-full rounded-lg border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 py-2.5 text-sm outline-none"
             />
-            <div className="mb-1.5 text-[10px] uppercase tracking-wide text-[var(--color-text-faint)]">
-              Plates available (kg)
+            <div className="mb-1.5 flex items-center justify-between">
+              <span className="text-[10px] uppercase tracking-wide text-[var(--color-text-faint)]">
+                Plates available
+              </span>
+              <span className="flex overflow-hidden rounded-full border-2 border-[var(--color-border)]">
+                {(['kg', 'lb'] as const).map((u) => (
+                  <button
+                    key={u}
+                    type="button"
+                    onClick={() => setEditPlateUnit(u)}
+                    className={`px-2.5 py-0.5 text-[10px] font-semibold transition active:scale-95 ${
+                      editPlateUnit === u
+                        ? 'bg-[var(--color-primary)] text-white'
+                        : 'bg-[var(--color-surface-2)] text-[var(--color-text-faint)]'
+                    }`}
+                  >
+                    {u}
+                  </button>
+                ))}
+              </span>
             </div>
             <p className="mb-2 text-xs text-[var(--color-text-faint)]">
               Used by the Plate Calculator to work out what's actually on hand here.
             </p>
             <div className="mb-3 flex flex-wrap gap-1.5">
-              {ALL_PLATE_SIZES_KG.map((size) => (
+              {ALL_PLATE_SIZES[editPlateUnit].map((size) => (
                 <button
                   key={size}
                   type="button"
-                  onClick={() => togglePlate(size)}
+                  onClick={() => togglePlate(editPlateUnit, size)}
                   className={`rounded-full border-2 border-[var(--color-border)] px-3 py-1.5 text-sm font-semibold transition active:scale-95 ${
-                    editPlates.includes(size)
+                    editPlates[editPlateUnit].includes(size)
                       ? 'bg-[var(--color-primary)] text-white'
                       : 'bg-[var(--color-surface-2)] text-[var(--color-text-faint)]'
                   }`}

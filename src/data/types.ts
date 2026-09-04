@@ -5,8 +5,9 @@ export interface Routine {
   id: string;
   name: string;
   accent: string;
-  /** Which kg plates this gym actually has on hand, for the plate calculator. Undefined means "all standard sizes". */
-  plateInventory?: number[];
+  /** Which plates this gym actually has on hand, per unit, for the plate calculator. A missing
+   * unit (or the whole field) means "all standard sizes" for that unit. */
+  plateInventory?: Partial<Record<'kg' | 'lb', number[]>>;
   archived?: boolean;
 }
 

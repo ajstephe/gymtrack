@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { X, Plus, Scale, StickyNote, Search } from 'lucide-react';
+import { X, Plus, Scale, StickyNote, Search, ArrowUpDown } from 'lucide-react';
 import { db, newId } from '../data/db';
 import { useSessionStore } from '../store/sessionStore';
 import { useRestTimerStore } from '../store/restTimerStore';
@@ -43,6 +43,10 @@ export function ActiveWorkout() {
   const lastBodyWeight = useLiveQuery(() => db.bodyWeights.orderBy('date').last(), []);
 
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  // Distinct from expandedId: this marks the exercise the user is actively working on, and stays
+  // set (keeping the card highlighted) even after they collapse it — only switching to a
+  // different exercise, not just minimizing this one, should move the highlight.
+  const [activeExerciseId, setActiveExerciseId] = useState<string | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const [restDuration, setRestDuration] = useState(90);
   const [showBodyWeight, setShowBodyWeight] = useState(false);
@@ -54,6 +58,7 @@ export function ActiveWorkout() {
   const [editDraft, setEditDraft] = useState({ weight: '', reps: '', rpe: '' });
   const [showNotes, setShowNotes] = useState(false);
   const [exerciseQuery, setExerciseQuery] = useState('');
+  const [editOrder, setEditOrder] = useState(false);
 
   useEscapeToClose(showAddExercise, () => setShowAddExercise(false));
   useEscapeToClose(showNotes, () => setShowNotes(false));
@@ -332,11 +337,25 @@ export function ActiveWorkout() {
         </div>
       )}
 
+      {!exerciseQuery.trim() && visibleCategories.length > 1 && (
+        <div className="mb-3 flex justify-end">
+          <button
+            onClick={() => setEditOrder((v) => !v)}
+            className={`flex items-center gap-1.5 rounded-full border-2 border-[var(--color-border)] px-3 py-1.5 text-xs font-semibold transition active:scale-95 ${
+              editOrder ? 'bg-[var(--color-primary)] text-white' : 'bg-[var(--color-surface-2)] text-[var(--color-text-dim)]'
+            }`}
+          >
+            <ArrowUpDown size={13} />
+            {editOrder ? 'Done' : 'Edit order'}
+          </button>
+        </div>
+      )}
+
       <div className="flex flex-col gap-5 pb-24">
         {visibleCategories.map(({ category, exercises: exList }, i) => {
           const isCollapsed = !exerciseQuery.trim() && collapsedCategories.has(category);
           const isDragging = dragReorder.draggingKey === category;
-          const canReorderCategories = !exerciseQuery.trim() && visibleCategories.length > 1;
+          const canReorderCategories = editOrder && !exerciseQuery.trim() && visibleCategories.length > 1;
           return (
           <div
             key={category}
@@ -377,7 +396,15 @@ export function ActiveWorkout() {
                       key={ex.id}
                       ex={ex}
                       isOpen={isOpen}
-                      onToggleOpen={() => setExpandedId(isOpen ? null : ex.id)}
+                      isActive={activeExerciseId === ex.id}
+                      onToggleOpen={() => {
+                        if (isOpen) {
+                          setExpandedId(null);
+                        } else {
+                          setExpandedId(ex.id);
+                          setActiveExerciseId(ex.id);
+                        }
+                      }}
                       logged={logged}
                       last={last}
                       lastTop={lastTop}

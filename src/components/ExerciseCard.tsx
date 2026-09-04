@@ -27,6 +27,7 @@ interface SetEditDraft {
 export function ExerciseCard({
   ex,
   isOpen,
+  isActive,
   onToggleOpen,
   logged,
   last,
@@ -53,6 +54,7 @@ export function ExerciseCard({
 }: {
   ex: Exercise;
   isOpen: boolean;
+  isActive: boolean;
   onToggleOpen: () => void;
   logged: SetEntry[];
   last: SetEntry[] | null;
@@ -95,7 +97,7 @@ export function ExerciseCard({
     <div
       id={`ex-${ex.id}`}
       className={`card-bevel overflow-hidden rounded-2xl border-2 transition-colors ${
-        isOpen ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/5' : 'border-[var(--color-border)] bg-[var(--color-surface)]'
+        isActive ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/5' : 'border-[var(--color-border)] bg-[var(--color-surface)]'
       }`}
     >
       <div className="flex items-center">

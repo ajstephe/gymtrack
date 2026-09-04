@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Link } from 'react-router-dom';
-import { Search, Plus, ChevronRight, ChevronUp, ChevronDown } from 'lucide-react';
+import { Search, Plus, ChevronRight, ChevronUp, ChevronDown, ArrowUpDown } from 'lucide-react';
 import { db, newId } from '../data/db';
 import type { Exercise, WeightUnit } from '../data/types';
 import { EmptyState } from '../components/EmptyState';
@@ -23,19 +23,21 @@ import { useDragReorder } from '../lib/useDragReorder';
 function ExerciseGroupList({
   items,
   query,
+  editOrder,
   onRemove,
   onMove,
   onReorder,
 }: {
   items: Exercise[];
   query: string;
+  editOrder: boolean;
   onRemove: (ex: Exercise) => void;
   onMove: (items: Exercise[], index: number, direction: -1 | 1) => void;
   onReorder: (items: Exercise[], orderedIds: string[]) => void;
 }) {
   const handleReorder = useCallback((orderedIds: string[]) => onReorder(items, orderedIds), [items, onReorder]);
   const dragReorder = useDragReorder(items, (ex) => ex.id, handleReorder);
-  const canReorder = !query.trim() && items.length > 1;
+  const canReorder = editOrder && !query.trim() && items.length > 1;
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -78,7 +80,7 @@ function ExerciseGroupList({
                   </div>
                   <ChevronRight size={16} className="shrink-0 text-[var(--color-text-faint)]" />
                 </Link>
-                {!query.trim() && items.length > 1 && (
+                {canReorder && (
                   <div className="flex shrink-0 flex-col">
                     <button
                       onClick={() => onMove(items, i, -1)}
@@ -122,6 +124,7 @@ export function ExerciseLibrary() {
   const [showAdd, setShowAdd] = useState(false);
   useEscapeToClose(showAdd, () => setShowAdd(false));
   const [form, setForm] = useState({ name: '', category: '', unit: 'kg' as WeightUnit, setupNote: '' });
+  const [editOrder, setEditOrder] = useState(false);
 
   const { categories: categoriesBase, dragReorder, moveCategory } = useCategoryOrdering(activeRoutineId, exercises);
   const allCategories = categoriesBase.map((c) => c.category);
@@ -231,6 +234,20 @@ export function ExerciseLibrary() {
         />
       </div>
 
+      {grouped.length > 1 && (
+        <div className="mb-3 flex justify-end">
+          <button
+            onClick={() => setEditOrder((v) => !v)}
+            className={`flex items-center gap-1.5 rounded-full border-2 border-[var(--color-border)] px-3 py-1.5 text-xs font-semibold transition active:scale-95 ${
+              editOrder ? 'bg-[var(--color-primary)] text-white' : 'bg-[var(--color-surface-2)] text-[var(--color-text-dim)]'
+            }`}
+          >
+            <ArrowUpDown size={13} />
+            {editOrder ? 'Done' : 'Edit order'}
+          </button>
+        </div>
+      )}
+
       <div className="flex flex-col gap-5 pb-4">
         {grouped.length === 0 ? (
           <EmptyState title="No exercises found" />
@@ -238,7 +255,7 @@ export function ExerciseLibrary() {
           grouped.map(({ category, items }, i) => {
             const isCollapsed = !query.trim() && collapsedCategories.has(category);
             const isDragging = dragReorder.draggingKey === category;
-            const canReorderCategories = !query.trim() && grouped.length > 1;
+            const canReorderCategories = editOrder && !query.trim() && grouped.length > 1;
             return (
             <div
               key={category}
@@ -265,6 +282,7 @@ export function ExerciseLibrary() {
                 <ExerciseGroupList
                   items={items}
                   query={query}
+                  editOrder={editOrder}
                   onRemove={removeExercise}
                   onMove={moveExercise}
                   onReorder={reorderExercises}

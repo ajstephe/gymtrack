@@ -1,12 +1,24 @@
-import type { WeightUnit } from '../data/types';
+import type { BarType, WeightUnit } from '../data/types';
 
 const PLATE_SETS: Record<'kg' | 'lb', number[]> = {
   kg: [25, 20, 15, 10, 5, 2.5, 1.25],
   lb: [45, 35, 25, 10, 5, 2.5],
 };
 
-/** Standard Olympic bar weight, used when a "per side + bar" exercise needs a total load. */
-export const STANDARD_BAR_WEIGHT: Record<'kg' | 'lb', number> = { kg: 20, lb: 45 };
+export const BAR_TYPES: BarType[] = ['standard', 'short', 'ez'];
+
+export const BAR_LABEL: Record<BarType, string> = {
+  standard: 'Standard',
+  short: 'Short',
+  ez: 'EZ',
+};
+
+/** Bar weight by type, used when a "per side + bar" exercise needs a total load. */
+export const BAR_WEIGHT: Record<BarType, Record<'kg' | 'lb', number>> = {
+  standard: { kg: 20, lb: 45 },
+  short: { kg: 15, lb: 33 },
+  ez: { kg: 7.5, lb: 18 },
+};
 
 /** Color by rank (biggest plate first) rather than by literal weight, so it stays consistent across kg and lb sets. */
 const RANK_COLORS = [

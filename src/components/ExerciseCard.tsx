@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { ChevronDown, Check, X, Flame, Plus, Minus, SlidersHorizontal, Repeat, Trophy } from 'lucide-react';
 import { formatWeight, trimNum } from '../lib/format';
-import { canPlateCalc, plateBreakdown, STANDARD_BAR_WEIGHT } from '../lib/plates';
-import type { Exercise, SetEntry } from '../data/types';
+import { canPlateCalc, plateBreakdown, BAR_TYPES, BAR_LABEL, BAR_WEIGHT } from '../lib/plates';
+import type { BarType, Exercise, SetEntry } from '../data/types';
 import type { PersonalRecord, ProgressionSuggestion } from '../lib/calculations';
 import { ExercisePhotoThumb, ExercisePhotoButton } from './ExercisePhoto';
 import { Collapse } from './Collapse';
@@ -42,6 +42,7 @@ export function ExerciseCard({
   onSetUnit,
   onBumpWeight,
   onBumpReps,
+  onSetBarType,
   onUpdateSetupNote,
   editingSetId,
   editDraft,
@@ -68,6 +69,7 @@ export function ExerciseCard({
   onSetUnit: (unit: 'kg' | 'lb' | 'stack') => void;
   onBumpWeight: (delta: 1 | -1) => void;
   onBumpReps: (delta: 1 | -1) => void;
+  onSetBarType: (barType: BarType) => void;
   onUpdateSetupNote: (note: string) => void;
   editingSetId: string | null;
   editDraft: SetEditDraft;
@@ -424,18 +426,42 @@ export function ExerciseCard({
             draft.weight &&
             !Number.isNaN(parseFloat(draft.weight)) &&
             (() => {
+              const unit = ex.unit as 'kg' | 'lb';
               const perSide = parseFloat(draft.weight);
-              const { plates, remainder } = plateBreakdown(perSide, ex.unit);
-              const barWeight = ex.weightType === 'each_bar' ? STANDARD_BAR_WEIGHT[ex.unit] : 0;
+              const { plates, remainder } = plateBreakdown(perSide, unit);
+              const barType = ex.barType ?? 'standard';
+              const barWeight = ex.weightType === 'each_bar' ? BAR_WEIGHT[barType][unit] : 0;
               const total = perSide * 2 + barWeight;
               return (
                 <div className="mb-2.5 -mt-1 rounded-xl border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 py-2.5">
                   <div className="mb-0.5 text-center font-mono text-lg font-bold">
                     {trimNum(total)}
-                    {ex.unit}
+                    {unit}
                     <span className="ml-1 text-xs font-normal text-[var(--color-text-faint)]">total</span>
                   </div>
-                  <PlateDiagram plates={plates} unit={ex.unit} />
+                  <PlateDiagram plates={plates} unit={unit} />
+                  {ex.weightType === 'each_bar' && (
+                    <div className="mt-1.5 flex items-center justify-center gap-1.5">
+                      <span className="text-[10px] uppercase tracking-wide text-[var(--color-text-faint)]">Bar</span>
+                      <span className="flex overflow-hidden rounded-full border-2 border-[var(--color-border)]">
+                        {BAR_TYPES.map((bt) => (
+                          <button
+                            key={bt}
+                            type="button"
+                            onClick={() => onSetBarType(bt)}
+                            className={`px-2 py-0.5 text-[10px] font-semibold transition active:scale-95 ${
+                              barType === bt
+                                ? 'bg-[var(--color-primary)] text-white'
+                                : 'bg-[var(--color-surface)] text-[var(--color-text-faint)]'
+                            }`}
+                          >
+                            {BAR_LABEL[bt]} {trimNum(BAR_WEIGHT[bt][unit])}
+                            {unit}
+                          </button>
+                        ))}
+                      </span>
+                    </div>
+                  )}
                   <div className="mt-1 flex flex-wrap items-center justify-center gap-1.5 text-xs text-[var(--color-text-faint)]">
                     <span className="uppercase tracking-wide">Per side</span>
                     {plates.length === 0 ? (

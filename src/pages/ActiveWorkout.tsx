@@ -17,7 +17,7 @@ import { LogBodyWeightSheet } from '../components/LogBodyWeightSheet';
 import { WorkoutNotesSheet } from '../components/WorkoutNotesSheet';
 import { AddExerciseSheet, type NewExerciseForm } from '../components/AddExerciseSheet';
 import { ExerciseCard, type Draft } from '../components/ExerciseCard';
-import type { Exercise, SetEntry } from '../data/types';
+import type { BarType, Exercise, SetEntry } from '../data/types';
 
 export function ActiveWorkout() {
   const { sessionId } = useParams<{ sessionId: string }>();
@@ -228,6 +228,10 @@ export function ActiveWorkout() {
     await db.exercises.update(exId, { unit });
   }
 
+  async function setBarType(exId: string, barType: BarType) {
+    await db.exercises.update(exId, { barType });
+  }
+
   async function updateSetupNote(exId: string, note: string) {
     await db.exercises.update(exId, { setupNote: note || undefined });
   }
@@ -388,6 +392,7 @@ export function ActiveWorkout() {
                       onLogSet={() => logSet(ex)}
                       onQuickRepeat={() => quickRepeatSet(ex)}
                       onSetUnit={(unit) => setUnit(ex.id, unit)}
+                      onSetBarType={(barType) => setBarType(ex.id, barType)}
                       onBumpWeight={(delta) => bumpWeight(ex, delta)}
                       onBumpReps={(delta) => bumpReps(ex, delta)}
                       onUpdateSetupNote={(note) => updateSetupNote(ex.id, note)}

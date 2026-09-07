@@ -73,12 +73,17 @@ export function SessionDetail() {
       </div>
 
       <h1 className="text-2xl font-bold">{routine?.name ?? 'Workout'}</h1>
-      <p className="mb-4 text-sm text-[var(--color-text-dim)]">
+      <p className="mb-1 text-sm text-[var(--color-text-dim)]">
         {new Date(session.startedAt).toLocaleDateString(undefined, {
           weekday: 'long',
           month: 'short',
           day: 'numeric',
         })}
+      </p>
+      <p className="mb-4 text-sm text-[var(--color-text-faint)]">
+        {new Date(session.startedAt).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
+        {session.endedAt &&
+          ` – ${new Date(session.endedAt).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`}
       </p>
 
       {session.notes && (

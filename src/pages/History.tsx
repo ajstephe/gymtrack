@@ -46,7 +46,8 @@ export function History() {
                       weekday: 'short',
                       month: 'short',
                       day: 'numeric',
-                    })}
+                    })}{' '}
+                    · {new Date(s.startedAt).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
                     {durationMin != null && ` · ${durationMin} min`} · {sessionSets.length} sets
                   </div>
                 </div>

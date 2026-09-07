@@ -35,12 +35,17 @@ export interface Exercise {
   archived?: boolean;
 }
 
+export type ExerciseStatus = 'in_progress' | 'done';
+
 export interface WorkoutSession {
   id: string;
   routineId: string;
   startedAt: string;
   endedAt?: string;
   notes?: string;
+  /** Per-exercise start/done marker for this session — purely informational, doesn't gate logging
+   * or editing. Keyed by exerciseId; absence means "not started". */
+  exerciseStatus?: Record<string, ExerciseStatus>;
 }
 
 export interface ExercisePhoto {

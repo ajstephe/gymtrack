@@ -237,6 +237,18 @@ export function ActiveWorkout() {
     await db.exercises.update(exId, { setupNote: note || undefined });
   }
 
+  // Cycles not-started -> in progress -> done -> not-started. Purely informational bookkeeping —
+  // never gates logging a set or editing the exercise.
+  async function cycleExerciseStatus(exId: string) {
+    if (!sessionId || !session) return;
+    const current = session.exerciseStatus ?? {};
+    const next = { ...current };
+    if (!next[exId]) next[exId] = 'in_progress';
+    else if (next[exId] === 'in_progress') next[exId] = 'done';
+    else delete next[exId];
+    await db.sessions.update(sessionId, { exerciseStatus: next });
+  }
+
   async function addExerciseOnTheFly(form: NewExerciseForm) {
     if (!form.name.trim() || !session) return;
     const count = await db.exercises.where('routineId').equals(session.routineId).count();
@@ -418,6 +430,8 @@ export function ActiveWorkout() {
                       onBumpWeight={(delta) => bumpWeight(ex, delta)}
                       onBumpReps={(delta) => bumpReps(ex, delta)}
                       onUpdateSetupNote={(note) => updateSetupNote(ex.id, note)}
+                      status={session.exerciseStatus?.[ex.id]}
+                      onCycleStatus={() => cycleExerciseStatus(ex.id)}
                       editingSetId={editingSetId}
                       editDraft={editDraft}
                       onEditDraftChange={(patch) => setEditDraft((d) => ({ ...d, ...patch }))}

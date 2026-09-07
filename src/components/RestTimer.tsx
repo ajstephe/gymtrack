@@ -36,19 +36,19 @@ export function RestTimer() {
     <div className="fixed inset-x-0 bottom-[64px] z-40 mx-auto max-w-[560px] px-3 pb-2">
       <div
         className={`card-bevel relative overflow-hidden rounded-2xl border-2 border-[var(--color-border)] ${
-          isDone ? 'bg-[var(--color-lime)]' : 'bg-[var(--color-surface)]'
+          isDone ? 'bg-[var(--color-lime)]' : 'bg-[var(--color-amber)]'
         }`}
       >
         <div
-          className="absolute inset-y-0 left-0 bg-[var(--color-primary)]/15 transition-[width]"
+          className="absolute inset-y-0 left-0 bg-black/10 transition-[width]"
           style={{ width: `${progress * 100}%` }}
         />
         <div className="relative flex items-center gap-3 px-4 py-3">
           <div className="flex-1">
-            <div className="text-[11px] uppercase tracking-wide text-[var(--color-text-faint)]">
+            <div className="text-[11px] uppercase tracking-wide text-[var(--color-text)]/70">
               {isDone ? 'Rest done' : `Resting${label ? ` · ${label}` : ''}`}
             </div>
-            <div className={`font-mono text-2xl font-semibold tabular-nums ${isDone ? 'text-[var(--color-text)]' : ''}`}>
+            <div className="font-mono text-2xl font-semibold tabular-nums text-[var(--color-text)]">
               {isDone ? 'GO' : formatDuration(remainingSec)}
             </div>
           </div>

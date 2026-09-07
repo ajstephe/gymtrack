@@ -210,7 +210,7 @@ export function ExerciseCard({
           >
             {status === 'done' ? (
               <>
-                <CheckCircle2 size={15} /> Done — tap to reset
+                <CheckCircle2 size={15} /> Done — tap to add or edit
               </>
             ) : status === 'in_progress' ? (
               <>

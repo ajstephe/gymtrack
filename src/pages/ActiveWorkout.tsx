@@ -237,15 +237,17 @@ export function ActiveWorkout() {
     await db.exercises.update(exId, { setupNote: note || undefined });
   }
 
-  // Cycles not-started -> in progress -> done -> not-started. Purely informational bookkeeping —
-  // never gates logging a set or editing the exercise.
+  // Cycles not-started -> in progress -> done -> in progress (tapping "Done" again drops back to
+  // in-progress rather than all the way to not-started, since at that point you're adding another
+  // set or editing, not starting over). Purely informational bookkeeping — never gates logging a
+  // set or editing the exercise.
   async function cycleExerciseStatus(exId: string) {
     if (!sessionId || !session) return;
     const current = session.exerciseStatus ?? {};
     const next = { ...current };
     if (!next[exId]) next[exId] = 'in_progress';
     else if (next[exId] === 'in_progress') next[exId] = 'done';
-    else delete next[exId];
+    else next[exId] = 'in_progress';
     await db.sessions.update(sessionId, { exerciseStatus: next });
   }
 

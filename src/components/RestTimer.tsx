@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Plus, Minus, X } from 'lucide-react';
 import { useRestTimerStore, playRestDoneChime } from '../store/restTimerStore';
 import { formatDuration } from '../lib/format';
 import { notifyRestDone } from '../lib/notifications';
 
 export function RestTimer() {
-  const { endsAt, duration, label, addSeconds, stop } = useRestTimerStore();
+  const { endsAt, duration, label, exerciseId, sessionId, addSeconds, stop } = useRestTimerStore();
   const [remainingSec, setRemainingSec] = useState(0);
   const chimedRef = useRef(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (endsAt == null) return;
@@ -44,14 +46,19 @@ export function RestTimer() {
           style={{ width: `${progress * 100}%` }}
         />
         <div className="relative flex items-center gap-3 px-4 py-3">
-          <div className="flex-1">
+          <button
+            type="button"
+            onClick={() => exerciseId && sessionId && navigate(`/workout/${sessionId}#ex-${exerciseId}`)}
+            disabled={!exerciseId || !sessionId}
+            className="flex-1 text-left transition active:opacity-70 disabled:active:opacity-100"
+          >
             <div className="text-[11px] uppercase tracking-wide text-[var(--color-text)]/70">
               {isDone ? 'Rest done' : `Resting${label ? ` · ${label}` : ''}`}
             </div>
             <div className="font-mono text-2xl font-semibold tabular-nums text-[var(--color-text)]">
               {isDone ? 'GO' : formatDuration(remainingSec)}
             </div>
-          </div>
+          </button>
           {!isDone && (
             <div className="flex items-center gap-1.5">
               <button

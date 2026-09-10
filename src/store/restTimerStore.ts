@@ -4,7 +4,9 @@ interface RestTimerState {
   endsAt: number | null;
   duration: number;
   label: string | null;
-  start: (seconds: number, label?: string) => void;
+  exerciseId: string | null;
+  sessionId: string | null;
+  start: (seconds: number, label?: string, exerciseId?: string, sessionId?: string) => void;
   addSeconds: (delta: number) => void;
   stop: () => void;
 }
@@ -13,13 +15,22 @@ export const useRestTimerStore = create<RestTimerState>((set, get) => ({
   endsAt: null,
   duration: 90,
   label: null,
-  start: (seconds, label) => set({ endsAt: Date.now() + seconds * 1000, duration: seconds, label: label ?? null }),
+  exerciseId: null,
+  sessionId: null,
+  start: (seconds, label, exerciseId, sessionId) =>
+    set({
+      endsAt: Date.now() + seconds * 1000,
+      duration: seconds,
+      label: label ?? null,
+      exerciseId: exerciseId ?? null,
+      sessionId: sessionId ?? null,
+    }),
   addSeconds: (delta) => {
     const { endsAt } = get();
     if (endsAt == null) return;
     set({ endsAt: Math.max(Date.now(), endsAt + delta * 1000) });
   },
-  stop: () => set({ endsAt: null, label: null }),
+  stop: () => set({ endsAt: null, label: null, exerciseId: null, sessionId: null }),
 }));
 
 let audioCtx: AudioContext | null = null;

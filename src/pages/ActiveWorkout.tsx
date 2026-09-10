@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { X, Plus, Scale, StickyNote, Search, ArrowUpDown } from 'lucide-react';
 import { db, newId } from '../data/db';
 import { useSessionStore } from '../store/sessionStore';
 import { useRestTimerStore } from '../store/restTimerStore';
 import { formatWeight, formatDuration, trimNum } from '../lib/format';
-import { workingSets, suggestNextTarget, personalRecords, WEIGHT_INCREMENT } from '../lib/calculations';
+import { workingSets, suggestNextTarget, personalRecords, sessionBests, WEIGHT_INCREMENT } from '../lib/calculations';
 import { useEscapeToClose } from '../lib/useEscapeToClose';
 import { useCategoryOrdering } from '../lib/useCategoryOrdering';
 import { hapticTap, hapticSuccess } from '../lib/haptics';
@@ -22,6 +22,7 @@ import type { Exercise, SetEntry } from '../data/types';
 export function ActiveWorkout() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const setActiveSessionId = useSessionStore((s) => s.setActiveSessionId);
   const startTimer = useRestTimerStore((s) => s.start);
 
@@ -87,6 +88,29 @@ export function ActiveWorkout() {
       setCollapsedCategories(new Set(categories.map((c) => c.category)));
     }
   }, [categories]);
+
+  // Jumped here from the rest timer (or anywhere else linking to #ex-<id>) — expand that
+  // exercise's card and category, then scroll it into view. Genuinely synchronizing with an
+  // external system (browser navigation), not state derivable during render.
+  /* eslint-disable react/set-state-in-effect */
+  useEffect(() => {
+    if (!exercises) return;
+    const target = exercises.find((e) => location.hash === `#ex-${e.id}`);
+    if (!target) return;
+    setExpandedId(target.id);
+    setActiveExerciseId(target.id);
+    setCollapsedCategories((prev) => {
+      if (!prev.has(target.category)) return prev;
+      const next = new Set(prev);
+      next.delete(target.category);
+      return next;
+    });
+    const t = setTimeout(() => {
+      document.getElementById(`ex-${target.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 150);
+    return () => clearTimeout(t);
+  }, [location.hash, exercises]);
+  /* eslint-enable react/set-state-in-effect */
 
   function toggleCategory(category: string) {
     setCollapsedCategories((prev) => {
@@ -164,7 +188,7 @@ export function ActiveWorkout() {
       delete next[ex.id];
       return next;
     });
-    startTimer(restDuration, ex.name);
+    startTimer(restDuration, ex.name, ex.id, sessionId);
 
     if (isPR && weight > 0) {
       hapticSuccess();
@@ -210,7 +234,7 @@ export function ActiveWorkout() {
       rpe: last.rpe,
       completedAt: new Date().toISOString(),
     });
-    startTimer(restDuration, ex.name);
+    startTimer(restDuration, ex.name, ex.id, sessionId);
     hapticTap();
   }
 
@@ -404,6 +428,11 @@ export function ActiveWorkout() {
                     lastWorking.length > 0 ? [...lastWorking].sort((a, b) => b.weight - a.weight)[0] : null;
                   const suggestion = lastTop && workingLogged.length === 0 ? suggestNextTarget(lastTop) : null;
                   const draft = draftFor(ex);
+                  // Only computed while the card is open — it scans all of this exercise's history,
+                  // which isn't worth doing for every collapsed row in a 15+ exercise category.
+                  const progressHistory = isOpen
+                    ? sessionBests((allSets ?? []).filter((s) => s.exerciseId === ex.id)).slice(-6)
+                    : [];
 
                   return (
                     <ExerciseCard
@@ -424,6 +453,7 @@ export function ActiveWorkout() {
                       lastTop={lastTop}
                       suggestion={suggestion}
                       personalBest={personalBests.get(ex.id) ?? null}
+                      progressHistory={progressHistory}
                       draft={draft}
                       onUpdateDraft={(patch) => updateDraft(ex.id, patch)}
                       onLogSet={() => logSet(ex)}

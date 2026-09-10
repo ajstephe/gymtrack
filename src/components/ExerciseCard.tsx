@@ -2,10 +2,11 @@ import { useState } from 'react';
 import { ChevronDown, Check, X, Flame, Plus, Minus, SlidersHorizontal, Repeat, Trophy, Play, Square, CheckCircle2 } from 'lucide-react';
 import { formatWeight, trimNum } from '../lib/format';
 import type { Exercise, ExerciseStatus, SetEntry } from '../data/types';
-import type { PersonalRecord, ProgressionSuggestion } from '../lib/calculations';
+import type { PersonalRecord, ProgressionSuggestion, SessionBest } from '../lib/calculations';
 import { ExercisePhotoThumb, ExercisePhotoButton } from './ExercisePhoto';
 import { Collapse } from './Collapse';
 import { SwipeToDelete } from './SwipeToDelete';
+import { ProgressChart } from './ProgressChart';
 
 const REST_PRESETS = [60, 90, 120, 180];
 const RPE_OPTIONS = [6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10];
@@ -34,6 +35,7 @@ export function ExerciseCard({
   lastTop,
   suggestion,
   personalBest,
+  progressHistory,
   draft,
   onUpdateDraft,
   onLogSet,
@@ -63,6 +65,7 @@ export function ExerciseCard({
   lastTop: SetEntry | null;
   suggestion: ProgressionSuggestion | null;
   personalBest: PersonalRecord | null;
+  progressHistory: SessionBest[];
   draft: Draft;
   onUpdateDraft: (patch: Partial<Draft>) => void;
   onLogSet: () => void;
@@ -232,6 +235,13 @@ export function ExerciseCard({
                   {formatWeight(personalBest.weight, ex.unit)} × {personalBest.reps}
                 </span>
               </span>
+            </div>
+          )}
+
+          {progressHistory.length > 0 && (
+            <div>
+              <div className="mb-1.5 text-[10px] uppercase tracking-wide text-[var(--color-text-faint)]">Progress</div>
+              <ProgressChart history={progressHistory} />
             </div>
           )}
 

@@ -3,7 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { ArrowLeft, Trash2 } from 'lucide-react';
 import { db } from '../data/db';
 import { formatWeight, formatVolume, trimNum } from '../lib/format';
-import { workingSets } from '../lib/calculations';
+import { workingSets, estimateCaloriesBurned, toKg } from '../lib/calculations';
 import { confirmDialog } from '../store/dialogStore';
 import { Spinner } from '../components/Spinner';
 
@@ -21,6 +21,8 @@ export function SessionDetail() {
   );
   const exercises = useLiveQuery(() => db.exercises.toArray(), []) ?? [];
   const exerciseById = new Map(exercises.map((e) => [e.id, e]));
+  const latestBodyWeight = useLiveQuery(() => db.bodyWeights.orderBy('date').last(), []);
+  const profile = useLiveQuery(() => db.profile.get('profile'), []);
 
   if (!session || !sets) {
     return <Spinner />;
@@ -37,6 +39,11 @@ export function SessionDetail() {
   const volume = workingSets(sets).reduce((sum, s) => sum + s.weight * s.reps, 0);
   const durationMin = session.endedAt
     ? Math.max(1, Math.round((new Date(session.endedAt).getTime() - new Date(session.startedAt).getTime()) / 60000))
+    : null;
+  const assumedBodyWeightKg = 75;
+  const bodyWeightKg = latestBodyWeight ? toKg(latestBodyWeight.weight, latestBodyWeight.unit) : assumedBodyWeightKg;
+  const calories = durationMin
+    ? estimateCaloriesBurned({ bodyWeightKg, durationMin, volumeKg: volume, age: profile?.age })
     : null;
 
   async function deleteSession() {
@@ -92,7 +99,7 @@ export function SessionDetail() {
         </div>
       )}
 
-      <div className="mb-5 grid grid-cols-3 gap-2">
+      <div className="mb-2 grid grid-cols-3 gap-2">
         <div className="rounded-xl border-2 border-[var(--color-border)] bg-[var(--color-surface)] p-3 text-center">
           <div className="text-lg font-bold">{durationMin ?? '–'}</div>
           <div className="text-[10px] uppercase text-[var(--color-text-faint)]">Minutes</div>
@@ -106,6 +113,20 @@ export function SessionDetail() {
           <div className="text-[10px] uppercase text-[var(--color-text-faint)]">Volume</div>
         </div>
       </div>
+
+      {calories != null && (
+        <div className="mb-5 flex items-center justify-between rounded-xl border-2 border-[var(--color-border)] bg-[var(--color-amber)]/12 px-4 py-3">
+          <div>
+            <div className="text-lg font-bold">~{calories} kcal</div>
+            <div className="text-[10px] uppercase text-[var(--color-text-faint)]">Active calories (estimate)</div>
+          </div>
+          {!latestBodyWeight && (
+            <span className="max-w-[45%] text-right text-[10px] text-[var(--color-text-faint)]">
+              Assumes {assumedBodyWeightKg}kg — log your weight for a better estimate
+            </span>
+          )}
+        </div>
+      )}
 
       <div className="flex flex-col gap-2 pb-6">
         {[...grouped.entries()].map(([exId, exSets]) => {

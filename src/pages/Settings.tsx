@@ -15,6 +15,14 @@ export function Settings() {
   const [persisted, setPersisted] = useState<boolean | null>(null);
   const [busy, setBusy] = useState<'export' | 'import' | null>(null);
   const [notifStatus, setNotifStatus] = useState<NotificationStatus>(() => notificationStatus());
+  const profile = useLiveQuery(() => db.profile.get('profile'), []);
+  const [ageDraft, setAgeDraft] = useState('');
+  const [ageInitialized, setAgeInitialized] = useState(false);
+
+  if (profile !== undefined && !ageInitialized) {
+    setAgeInitialized(true);
+    setAgeDraft(profile?.age ? String(profile.age) : '');
+  }
 
   const exerciseCount = useLiveQuery(() => db.exercises.count(), []) ?? 0;
   const sessionCount = useLiveQuery(() => db.sessions.count(), []) ?? 0;
@@ -24,6 +32,12 @@ export function Settings() {
   useEffect(() => {
     isStoragePersisted().then(setPersisted);
   }, []);
+
+  async function saveAge() {
+    const age = ageDraft.trim() ? parseInt(ageDraft, 10) : undefined;
+    await db.profile.put({ id: 'profile', age: age && age > 0 ? age : undefined });
+    showToast('Profile updated.', 'success');
+  }
 
   async function handleRequestPersist() {
     const granted = await requestPersistentStorage();
@@ -89,6 +103,29 @@ export function Settings() {
       </button>
 
       <h1 className="mb-5 text-2xl font-bold">Settings</h1>
+
+      <div className="mb-4 rounded-2xl border-2 border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+        <h2 className="mb-1 text-sm font-semibold text-[var(--color-text-dim)]">Profile</h2>
+        <p className="mb-3 text-xs text-[var(--color-text-faint)]">
+          Used to personalize estimates, like calories burned per workout.
+        </p>
+        <div className="flex gap-2">
+          <input
+            type="number"
+            inputMode="numeric"
+            value={ageDraft}
+            onChange={(e) => setAgeDraft(e.target.value)}
+            placeholder="Age"
+            className="w-24 rounded-lg border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 py-2 text-sm outline-none"
+          />
+          <button
+            onClick={saveAge}
+            className="flex-1 rounded-lg border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] py-2 text-sm font-semibold transition active:scale-95"
+          >
+            Save
+          </button>
+        </div>
+      </div>
 
       <div className="mb-4 rounded-2xl border-2 border-[var(--color-border)] bg-[var(--color-surface)] p-4">
         <h2 className="mb-2 text-sm font-semibold text-[var(--color-text-dim)]">Storage</h2>

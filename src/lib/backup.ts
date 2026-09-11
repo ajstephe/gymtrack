@@ -1,5 +1,5 @@
 import { db } from '../data/db';
-import type { Routine, Exercise, WorkoutSession, SetEntry, BodyWeightEntry } from '../data/types';
+import type { Routine, Exercise, WorkoutSession, SetEntry, BodyWeightEntry, UserProfile } from '../data/types';
 
 interface BackupPhoto {
   exerciseId: string;
@@ -16,6 +16,8 @@ export interface BackupData {
   sets: SetEntry[];
   bodyWeights: BodyWeightEntry[];
   photos: BackupPhoto[];
+  /** Optional — absent in backups made before profile settings existed. */
+  profile?: UserProfile[];
 }
 
 function blobToDataUrl(blob: Blob): Promise<string> {
@@ -38,13 +40,14 @@ function dataUrlToBlob(dataUrl: string): Blob {
 }
 
 export async function buildBackup(): Promise<BackupData> {
-  const [routines, exercises, sessions, sets, bodyWeights, photoRecords] = await Promise.all([
+  const [routines, exercises, sessions, sets, bodyWeights, photoRecords, profile] = await Promise.all([
     db.routines.toArray(),
     db.exercises.toArray(),
     db.sessions.toArray(),
     db.sets.toArray(),
     db.bodyWeights.toArray(),
     db.photos.toArray(),
+    db.profile.toArray(),
   ]);
   const photos = await Promise.all(
     photoRecords.map(async (p) => ({
@@ -53,7 +56,17 @@ export async function buildBackup(): Promise<BackupData> {
       updatedAt: p.updatedAt,
     }))
   );
-  return { version: 1, exportedAt: new Date().toISOString(), routines, exercises, sessions, sets, bodyWeights, photos };
+  return {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    routines,
+    exercises,
+    sessions,
+    sets,
+    bodyWeights,
+    photos,
+    profile,
+  };
 }
 
 export function downloadBackup(data: BackupData) {
@@ -87,7 +100,7 @@ export function isValidBackup(data: unknown): data is BackupData {
 export async function restoreBackup(data: BackupData): Promise<void> {
   await db.transaction(
     'rw',
-    [db.routines, db.exercises, db.sessions, db.sets, db.bodyWeights, db.photos],
+    [db.routines, db.exercises, db.sessions, db.sets, db.bodyWeights, db.photos, db.profile],
     async () => {
     await Promise.all([
       db.routines.clear(),
@@ -96,12 +109,14 @@ export async function restoreBackup(data: BackupData): Promise<void> {
       db.sets.clear(),
       db.bodyWeights.clear(),
       db.photos.clear(),
+      db.profile.clear(),
     ]);
     if (data.routines.length) await db.routines.bulkAdd(data.routines);
     if (data.exercises.length) await db.exercises.bulkAdd(data.exercises);
     if (data.sessions.length) await db.sessions.bulkAdd(data.sessions);
     if (data.sets.length) await db.sets.bulkAdd(data.sets);
     if (data.bodyWeights.length) await db.bodyWeights.bulkAdd(data.bodyWeights);
+    if (data.profile?.length) await db.profile.bulkAdd(data.profile);
     if (data.photos.length) {
       await db.photos.bulkAdd(
         data.photos.map((p) => ({

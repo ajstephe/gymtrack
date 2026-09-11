@@ -18,6 +18,36 @@ export const WEIGHT_INCREMENT: Record<WeightUnit, number> = {
   bodyweight: 2.5,
 };
 
+export function toKg(weight: number, unit: 'kg' | 'lb'): number {
+  return unit === 'lb' ? weight * 0.453592 : weight;
+}
+
+/**
+ * Rough active-calorie estimate for a resistance-training session, using the standard MET
+ * (metabolic equivalent) formula: kcal = MET x body weight (kg) x duration (hours). There's no
+ * heart-rate data to work from here, so MET is picked from volume moved per minute as a proxy for
+ * effort — more kg shifted per minute of session time reads as a more vigorous effort. Age gets a
+ * small, gentle discount past 30 since resting/active metabolic rate tends to decline gradually
+ * with age. This is a ballpark for a sense of effort, not a substitute for a heart-rate monitor.
+ */
+export function estimateCaloriesBurned({
+  bodyWeightKg,
+  durationMin,
+  volumeKg,
+  age,
+}: {
+  bodyWeightKg: number;
+  durationMin: number;
+  volumeKg: number;
+  age?: number;
+}): number {
+  if (durationMin <= 0 || bodyWeightKg <= 0) return 0;
+  const volumePerMin = volumeKg / durationMin;
+  const met = volumePerMin < 50 ? 3.5 : volumePerMin < 120 ? 5 : 6.5;
+  const ageFactor = age ? Math.max(0.85, 1 - Math.max(0, age - 30) * 0.002) : 1;
+  return Math.round(met * bodyWeightKg * (durationMin / 60) * ageFactor);
+}
+
 const REP_CEILING = 12;
 const REP_RESET = 8;
 

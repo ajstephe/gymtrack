@@ -69,6 +69,12 @@ export interface CategoryOrder {
   order: string[];
 }
 
+/** Single-row profile settings used to personalize estimates (e.g. calories burned). */
+export interface UserProfile {
+  id: 'profile';
+  age?: number;
+}
+
 export interface SetEntry {
   id: string;
   sessionId: string;

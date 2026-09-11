@@ -6,7 +6,15 @@ import { db, newId } from '../data/db';
 import { useSessionStore } from '../store/sessionStore';
 import { useRestTimerStore } from '../store/restTimerStore';
 import { formatWeight, formatDuration, trimNum } from '../lib/format';
-import { workingSets, suggestNextTarget, personalRecords, sessionBests, WEIGHT_INCREMENT } from '../lib/calculations';
+import {
+  workingSets,
+  suggestNextTarget,
+  personalRecords,
+  sessionBests,
+  estimateCaloriesBurned,
+  toKg,
+  WEIGHT_INCREMENT,
+} from '../lib/calculations';
 import { useEscapeToClose } from '../lib/useEscapeToClose';
 import { useCategoryOrdering } from '../lib/useCategoryOrdering';
 import { hapticTap, hapticSuccess } from '../lib/haptics';
@@ -42,6 +50,7 @@ export function ActiveWorkout() {
   );
   const allSets = useLiveQuery(() => db.sets.toArray(), []);
   const lastBodyWeight = useLiveQuery(() => db.bodyWeights.orderBy('date').last(), []);
+  const profile = useLiveQuery(() => db.profile.get('profile'), []);
 
   const [expandedId, setExpandedId] = useState<string | null>(null);
   // Distinct from expandedId: this marks the exercise the user is actively working on, and stays
@@ -321,13 +330,29 @@ export function ActiveWorkout() {
     );
   }
 
+  const liveVolume = workingSets(sessionSets ?? []).reduce((sum, s) => sum + s.weight * s.reps, 0);
+  const liveCalories =
+    elapsed > 30
+      ? estimateCaloriesBurned({
+          bodyWeightKg: lastBodyWeight ? toKg(lastBodyWeight.weight, lastBodyWeight.unit) : 75,
+          durationMin: elapsed / 60,
+          volumeKg: liveVolume,
+          age: profile?.age,
+        })
+      : null;
+
   return (
     <div className="px-4 pt-5">
       <div className="mb-4 pr-24">
         <div className="text-xs font-medium uppercase tracking-wide text-[var(--color-text-faint)]">
           {routine?.name ?? '...'}
         </div>
-        <h1 className="font-mono text-2xl font-bold tabular-nums">{formatDuration(elapsed)}</h1>
+        <div className="flex items-baseline gap-2">
+          <h1 className="font-mono text-2xl font-bold tabular-nums">{formatDuration(elapsed)}</h1>
+          {liveCalories != null && (
+            <span className="text-xs font-semibold text-[var(--color-amber)]">~{liveCalories} kcal</span>
+          )}
+        </div>
         {/* Deliberately far from Finish (floating top-right) — these get tapped constantly
             mid-workout, and sitting right under a workout-ending button invited fat-finger
             accidents. */}

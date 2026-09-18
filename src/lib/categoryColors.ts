@@ -20,6 +20,14 @@ const PALETTES: Record<Theme, string[]> = {
     '#248a3d', // green, darkened for legibility as text
     '#a2845e', // brown
   ],
+  cupertinoDark: [
+    '#ff375f', // pink
+    '#0a84ff', // blue
+    '#bf5af2', // purple
+    '#ff9f0a', // orange
+    '#30d158', // green
+    '#ffd60a', // yellow
+  ],
   nordic: [
     '#c17a52', // terracotta
     '#6c839a', // dusk blue

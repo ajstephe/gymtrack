@@ -9,7 +9,7 @@ export function ThemeSwitcher() {
   return (
     <div className="mb-4 rounded-2xl border-2 border-[var(--color-border)] bg-[var(--color-surface)] p-4">
       <h2 className="mb-3 text-sm font-semibold text-[var(--color-text-dim)]">Theme</h2>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="flex flex-col gap-2">
         {THEMES.map((t) => {
           const meta = THEME_META[t];
           const active = t === theme;

@@ -6,6 +6,7 @@ import { BarChart, Bar, LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tool
 import { db } from '../data/db';
 import { useSessionStore } from '../store/sessionStore';
 import { StatCard } from '../components/StatCard';
+import { ThemeSwitcher } from '../components/ThemeSwitcher';
 import { EmptyState } from '../components/EmptyState';
 import { LogBodyWeightSheet } from '../components/LogBodyWeightSheet';
 import {
@@ -217,6 +218,8 @@ export function Dashboard() {
           accent="var(--color-azure)"
         />
       </div>
+
+      <ThemeSwitcher />
 
       <div className="card-bevel mb-5 rounded-2xl border-2 border-[var(--color-border)] bg-[var(--color-surface)] p-4">
         <div className="mb-2 flex items-center justify-between">

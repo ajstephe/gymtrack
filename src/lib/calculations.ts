@@ -285,6 +285,8 @@ export function topSetOf(sets: SetEntry[]): SetEntry | null {
 
 export interface SessionBest {
   date: string;
+  /** kg-equivalent (see effectiveKg) — a "top set" trend line has to plot one consistent unit
+   * across sessions, and a stack set's raw weight is a pin number, not a weight. */
   weight: number;
   reps: number;
   e1rm: number;
@@ -305,7 +307,7 @@ export function sessionBests(sets: SetEntry[]): SessionBest[] {
     if (!top) continue;
     result.push({
       date: top.completedAt,
-      weight: top.weight,
+      weight: effectiveKg(top),
       reps: top.reps,
       e1rm: Math.round(estOneRepMax(effectiveKg(top), top.reps)),
     });

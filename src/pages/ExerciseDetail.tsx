@@ -84,7 +84,9 @@ export function ExerciseDetail() {
 
   const chartData = bySession.map((row) => ({
     date: new Date(row.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
-    weight: row.top.weight,
+    // kg-equivalent (see effectiveKg), not row.top.weight — plotting one session's raw stack pin
+    // number against another session's raw kg number would compare two different scales.
+    weight: effectiveKg(row.top),
   }));
 
   const allTimeBest = working.length > 0 ? topSetOf(working) : null;
@@ -225,7 +227,9 @@ export function ExerciseDetail() {
                       borderRadius: 8,
                       fontSize: 12,
                     }}
-                    formatter={(v) => [formatWeight(Number(v), exercise.unit), 'Top set']}
+                    // Plotted values are kg-equivalent (see chartData above), so a stack exercise's
+                    // trend reads in kg here too rather than being mislabeled with the "#" prefix.
+                    formatter={(v) => [formatWeight(Number(v), exercise.unit === 'stack' ? 'kg' : exercise.unit), 'Top set']}
                   />
                   <Line
                     type="monotone"

@@ -1,13 +1,13 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export const THEMES = ['classic', 'neon80s', 'cupertino', 'nordic'] as const;
+export const THEMES = ['classic', 'cupertino', 'cupertinoDark', 'nordic'] as const;
 export type Theme = (typeof THEMES)[number];
 
 export const THEME_META: Record<Theme, { label: string; swatch: [string, string, string]; themeColor: string }> = {
   classic: { label: 'Classic', swatch: ['#f2ecd8', '#00897f', '#ff3d80'], themeColor: '#f2ecd8' },
-  neon80s: { label: 'Neon ’80s', swatch: ['#12071f', '#ff2e9d', '#00e5ff'], themeColor: '#12071f' },
-  cupertino: { label: 'Cupertino', swatch: ['#000000', '#0a84ff', '#ff453a'], themeColor: '#000000' },
+  cupertino: { label: 'Cupertino Light', swatch: ['#f2f2f7', '#007aff', '#ff3b30'], themeColor: '#f2f2f7' },
+  cupertinoDark: { label: 'Cupertino Dark', swatch: ['#000000', '#0a84ff', '#ff453a'], themeColor: '#000000' },
   nordic: { label: 'Nordic', swatch: ['#f6f3ec', '#c17a52', '#7f9575'], themeColor: '#f6f3ec' },
 };
 
@@ -22,6 +22,14 @@ export const useThemeStore = create<ThemeState>()(
       theme: 'classic',
       setTheme: (theme) => set({ theme }),
     }),
-    { name: 'gym-tracker-theme' }
+    {
+      name: 'gym-tracker-theme',
+      // A theme retired since a user last picked it (e.g. the old Neon '80s) would otherwise
+      // stick around as an unrecognized value with no matching CSS and no active swatch shown.
+      merge: (persisted, current) => {
+        const theme = (persisted as Partial<ThemeState> | undefined)?.theme;
+        return { ...current, theme: theme && (THEMES as readonly string[]).includes(theme) ? theme : current.theme };
+      },
+    }
   )
 );

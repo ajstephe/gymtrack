@@ -11,12 +11,6 @@
 @import "@fontsource/passion-one/latin-700.css";
 @import "@fontsource/passion-one/latin-900.css";
 
-@import "@fontsource/orbitron/latin-700.css";
-@import "@fontsource/orbitron/latin-800.css";
-@import "@fontsource/vt323/latin-400.css";
-@import "@fontsource/space-mono/latin-400.css";
-@import "@fontsource/space-mono/latin-700.css";
-
 @import "@fontsource/inter/latin-400.css";
 @import "@fontsource/inter/latin-500.css";
 @import "@fontsource/inter/latin-600.css";
@@ -60,28 +54,28 @@ html {
   color-scheme: light;
 }
 
-html[data-theme="neon80s"] {
-  color-scheme: dark;
-  --color-bg: #12071f;
-  --color-surface: #1f1138;
-  --color-surface-2: #2a1a4a;
-  --color-border: #ff2e9d;
-  --color-text: #f4ecff;
-  --color-text-dim: #b8a0e0;
-  --color-text-faint: #7d5fa3;
-  --color-primary: #00e5ff;
-  --color-primary-2: #b967ff;
-  --color-lime: #d4ff3f;
-  --color-crimson: #ff2e9d;
-  --color-azure: #00e5ff;
-  --color-amber: #ff9e2c;
-  --color-danger: #ff2d55;
-  --font-sans: "Space Mono", "Courier New", monospace;
-  --font-display: "Orbitron", "Arial Narrow", sans-serif;
-  --font-mono: "VT323", monospace;
+html[data-theme="cupertino"] {
+  color-scheme: light;
+  --color-bg: #f2f2f7;
+  --color-surface: #ffffff;
+  --color-surface-2: #e5e5ea;
+  --color-border: #d1d1d6;
+  --color-text: #000000;
+  --color-text-dim: rgba(60, 60, 67, 0.6);
+  --color-text-faint: rgba(60, 60, 67, 0.3);
+  --color-primary: #007aff;
+  --color-primary-2: #af52de;
+  --color-lime: #34c759;
+  --color-crimson: #ff2d55;
+  --color-azure: #32ade6;
+  --color-amber: #ff9500;
+  --color-danger: #ff3b30;
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
-html[data-theme="cupertino"] {
+html[data-theme="cupertinoDark"] {
   color-scheme: dark;
   --color-bg: #000000;
   --color-surface: #1c1c1e;
@@ -124,12 +118,16 @@ html[data-theme="nordic"] {
 }
 
 html[data-theme="cupertino"] .card-bevel,
+html[data-theme="cupertinoDark"] .card-bevel,
 html[data-theme="nordic"] .card-bevel {
   box-shadow: none;
 }
 html[data-theme="cupertino"] .btn-glow-primary,
 html[data-theme="cupertino"] .btn-glow-lime,
 html[data-theme="cupertino"] .btn-glow-pink,
+html[data-theme="cupertinoDark"] .btn-glow-primary,
+html[data-theme="cupertinoDark"] .btn-glow-lime,
+html[data-theme="cupertinoDark"] .btn-glow-pink,
 html[data-theme="nordic"] .btn-glow-primary,
 html[data-theme="nordic"] .btn-glow-lime,
 html[data-theme="nordic"] .btn-glow-pink {
@@ -139,16 +137,21 @@ html[data-theme="nordic"] .btn-glow-pink {
 html[data-theme="cupertino"] .btn-glow-primary:active,
 html[data-theme="cupertino"] .btn-glow-lime:active,
 html[data-theme="cupertino"] .btn-glow-pink:active,
+html[data-theme="cupertinoDark"] .btn-glow-primary:active,
+html[data-theme="cupertinoDark"] .btn-glow-lime:active,
+html[data-theme="cupertinoDark"] .btn-glow-pink:active,
 html[data-theme="nordic"] .btn-glow-primary:active,
 html[data-theme="nordic"] .btn-glow-lime:active,
 html[data-theme="nordic"] .btn-glow-pink:active {
   box-shadow: none;
 }
 html[data-theme="cupertino"] .border-2,
+html[data-theme="cupertinoDark"] .border-2,
 html[data-theme="nordic"] .border-2 {
   border-width: 1px;
 }
 html[data-theme="cupertino"] .tabular-nums,
+html[data-theme="cupertinoDark"] .tabular-nums,
 html[data-theme="nordic"] .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
@@ -169,8 +172,9 @@ body {
   overscroll-behavior-x: none;
 }
 
-html[data-theme="neon80s"] body,
-html[data-theme="cupertino"] body {
+/* The poster-paper dot texture above is tuned for a light ground — swap in a faint light-on-dark
+   version for the one dark theme instead of leaving the dark-on-dark original invisible. */
+html[data-theme="cupertinoDark"] body {
   background:
     radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px) 0 0 / 10px 10px,
     var(--color-bg);

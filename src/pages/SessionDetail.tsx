@@ -3,7 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { ArrowLeft, Trash2 } from 'lucide-react';
 import { db } from '../data/db';
 import { formatWeight, formatVolume, trimNum } from '../lib/format';
-import { workingSets, estimateCaloriesBurned, toKg } from '../lib/calculations';
+import { workingSets, estimateCaloriesBurned, toKg, effectiveKg } from '../lib/calculations';
 import { confirmDialog } from '../store/dialogStore';
 import { Spinner } from '../components/Spinner';
 
@@ -36,7 +36,7 @@ export function SessionDetail() {
   }
   for (const arr of grouped.values()) arr.sort((a, b) => a.setNumber - b.setNumber);
 
-  const volume = workingSets(sets).reduce((sum, s) => sum + s.weight * s.reps, 0);
+  const volume = workingSets(sets).reduce((sum, s) => sum + effectiveKg(s) * s.reps, 0);
   const durationMin = session.endedAt
     ? Math.max(1, Math.round((new Date(session.endedAt).getTime() - new Date(session.startedAt).getTime()) / 60000))
     : null;

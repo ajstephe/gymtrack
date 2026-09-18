@@ -14,6 +14,7 @@ import {
   estimateCaloriesBurned,
   toKg,
   WEIGHT_INCREMENT,
+  effectiveKg,
 } from '../lib/calculations';
 import { useEscapeToClose } from '../lib/useEscapeToClose';
 import { useCategoryOrdering } from '../lib/useCategoryOrdering';
@@ -330,7 +331,7 @@ export function ActiveWorkout() {
     );
   }
 
-  const liveVolume = workingSets(sessionSets ?? []).reduce((sum, s) => sum + s.weight * s.reps, 0);
+  const liveVolume = workingSets(sessionSets ?? []).reduce((sum, s) => sum + effectiveKg(s) * s.reps, 0);
   const liveCalories =
     elapsed > 30
       ? estimateCaloriesBurned({

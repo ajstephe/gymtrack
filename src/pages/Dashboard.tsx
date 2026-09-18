@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Link } from 'react-router-dom';
-import { Flame, TrendingUp, CalendarCheck, Trophy, ChevronRight, Play, Plus, Pencil, Scale, Settings as SettingsIcon } from 'lucide-react';
+import { Flame, TrendingUp, CalendarCheck, Trophy, ChevronRight, Play, Plus, Pencil, Scale } from 'lucide-react';
 import { BarChart, Bar, LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 import { db } from '../data/db';
 import { useSessionStore } from '../store/sessionStore';
@@ -150,22 +150,13 @@ export function Dashboard() {
 
   return (
     <div className="px-4 pt-6">
-      <div className="mb-5 flex items-center justify-between">
-        <div>
-          <div className="text-xs font-medium uppercase tracking-wide text-[var(--color-text-faint)]">
-            {new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}
-          </div>
-          <h1 className="text-2xl font-bold">
-            Your <span className="accent-text">Progress</span>
-          </h1>
+      <div className="mb-5">
+        <div className="text-xs font-medium uppercase tracking-wide text-[var(--color-text-faint)]">
+          {new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}
         </div>
-        <Link
-          to="/settings"
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-surface)] text-[var(--color-text-dim)] transition active:scale-90"
-          aria-label="Settings"
-        >
-          <SettingsIcon size={17} />
-        </Link>
+        <h1 className="text-2xl font-bold">
+          Your <span className="accent-text">Progress</span>
+        </h1>
       </div>
 
       {activeSession ? (

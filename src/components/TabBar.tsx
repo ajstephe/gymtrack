@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { Home, Dumbbell, History, CalendarDays, ListTree, Disc3 } from 'lucide-react';
+import { Home, Dumbbell, History, CalendarDays, ListTree, Disc3, Settings } from 'lucide-react';
 import { hapticTap } from '../lib/haptics';
 
 const tabs = [
@@ -9,6 +9,7 @@ const tabs = [
   { to: '/calendar', label: 'Calendar', icon: CalendarDays, end: false },
   { to: '/exercises', label: 'Exercises', icon: ListTree, end: false },
   { to: '/plates', label: 'Plates', icon: Disc3, end: false },
+  { to: '/settings', label: 'Settings', icon: Settings, end: false },
 ];
 
 export function TabBar() {

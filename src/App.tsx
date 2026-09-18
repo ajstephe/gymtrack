@@ -25,7 +25,7 @@ const ExerciseDetail = lazy(() => import('./pages/ExerciseDetail').then((m) => (
 
 // Top-level tab-bar destinations. Anything else is a "push" (drill-in) route, which gets a
 // directional slide transition and an edge-swipe-back gesture instead of the flat tab fade.
-const TAB_ROUTES = new Set(['/', '/train', '/history', '/calendar', '/exercises', '/plates']);
+const TAB_ROUTES = new Set(['/', '/train', '/history', '/calendar', '/exercises', '/plates', '/settings']);
 const EDGE_ZONE_PX = 24;
 const SWIPE_BACK_THRESHOLD_PX = 70;
 const SWIPE_BACK_MAX_DRIFT_PX = 60;

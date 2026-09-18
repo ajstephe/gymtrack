@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { ArrowLeft, ShieldCheck, ShieldAlert, Download, Upload, BellRing, BellOff } from 'lucide-react';
+import { ShieldCheck, ShieldAlert, Download, Upload, BellRing, BellOff } from 'lucide-react';
 import { db } from '../data/db';
 import { isStoragePersisted, requestPersistentStorage } from '../lib/storagePersistence';
 import { buildBackup, downloadBackup, isValidBackup, restoreBackup } from '../lib/backup';
@@ -11,7 +10,6 @@ import { showToast } from '../store/toastStore';
 import { ThemeSwitcher } from '../components/ThemeSwitcher';
 
 export function Settings() {
-  const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [persisted, setPersisted] = useState<boolean | null>(null);
   const [busy, setBusy] = useState<'export' | 'import' | null>(null);
@@ -94,15 +92,7 @@ export function Settings() {
   }
 
   return (
-    <div className="px-4 pt-5">
-      <button
-        onClick={() => navigate(-1)}
-        className="-ml-2 -mr-2 -mt-2 mb-2 flex items-center gap-1 p-2 text-[var(--color-text-dim)] transition active:scale-90"
-        aria-label="Back"
-      >
-        <ArrowLeft size={18} />
-      </button>
-
+    <div className="px-4 pt-6">
       <h1 className="mb-5 text-2xl font-bold">Settings</h1>
 
       <ThemeSwitcher />

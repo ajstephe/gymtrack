@@ -1,20 +1,49 @@
-// Dedicated hex values (not the shared button/accent tokens) so every category
-// reads clearly as text/dot color against the light poster-paper background —
-// the bright button-lime in particular is too light to use directly as text.
-const PALETTE = [
-  '#ff3d80', // crimson / hot pink
-  '#1a8fb4', // azure / blue-teal
-  '#7c9a1e', // lime, darkened for legibility as text
-  '#c2540a', // amber, darkened toward burnt orange
-  '#00897f', // primary teal
-  '#7b2cbf', // primary-2 purple
-];
+import { useThemeStore, type Theme } from '../store/themeStore';
+
+// Dedicated hex values (not the shared button/accent tokens) so every category reads clearly as
+// text/dot color against each theme's own background — a theme's bright "lime" button color in
+// particular is often too light to use directly as text. One palette per theme, same 6 slots.
+const PALETTES: Record<Theme, string[]> = {
+  classic: [
+    '#ff3d80', // crimson / hot pink
+    '#1a8fb4', // azure / blue-teal
+    '#7c9a1e', // lime, darkened for legibility as text
+    '#c2540a', // amber, darkened toward burnt orange
+    '#00897f', // primary teal
+    '#7b2cbf', // primary-2 purple
+  ],
+  neon80s: [
+    '#ff2e9d', // hot pink
+    '#00e5ff', // cyan
+    '#b967ff', // purple
+    '#ff9e2c', // orange
+    '#d4ff3f', // acid lime
+    '#ff2d55', // red
+  ],
+  cupertino: [
+    '#ff375f', // pink
+    '#0a84ff', // blue
+    '#bf5af2', // purple
+    '#ff9f0a', // orange
+    '#30d158', // green
+    '#ffd60a', // yellow
+  ],
+  nordic: [
+    '#c17a52', // terracotta
+    '#6c839a', // dusk blue
+    '#7f9575', // sage
+    '#cf9f42', // mustard
+    '#b8735f', // clay
+    '#8b8578', // stone
+  ],
+};
 
 /** Deterministic per-category color so e.g. "Chest" is always the same color everywhere. */
 export function categoryColor(category: string): string {
+  const palette = PALETTES[useThemeStore.getState().theme];
   let hash = 0;
   for (let i = 0; i < category.length; i++) hash = (hash * 31 + category.charCodeAt(i)) | 0;
-  return PALETTE[Math.abs(hash) % PALETTE.length];
+  return palette[Math.abs(hash) % palette.length];
 }
 
 /**
@@ -23,6 +52,7 @@ export function categoryColor(category: string): string {
  * color the way two unrelated hashes occasionally do.
  */
 export function categoryColorInSet(category: string, allCategories: string[]): string {
+  const palette = PALETTES[useThemeStore.getState().theme];
   const index = allCategories.indexOf(category);
-  return PALETTE[index < 0 ? 0 : index % PALETTE.length];
+  return palette[index < 0 ? 0 : index % palette.length];
 }

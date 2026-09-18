@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, Suspense, lazy } from 'react';
 import { Routes, Route, useLocation, useNavigationType, useNavigate } from 'react-router-dom';
 import { ensureSeeded } from './data/db';
 import { requestPersistentStorage } from './lib/storagePersistence';
+import { useThemeStore, THEME_META } from './store/themeStore';
 import { TabBar } from './components/TabBar';
 import { RestTimer } from './components/RestTimer';
 import { ConfirmDialog } from './components/ConfirmDialog';
@@ -37,6 +38,14 @@ function App() {
   const showTabBar = !location.pathname.startsWith('/workout/');
   const isPushRoute = !TAB_ROUTES.has(location.pathname);
   const touchStart = useRef<{ x: number; y: number } | null>(null);
+  const theme = useThemeStore((s) => s.theme);
+
+  // Reflects the chosen theme onto the document so index.css's [data-theme] token blocks apply,
+  // and keeps the browser/OS chrome (status bar, task switcher) in sync via meta theme-color.
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', THEME_META[theme].themeColor);
+  }, [theme]);
 
   const transitionClass = useMemo(() => {
     if (navigationType === 'POP') return 'page-slide-in-left';

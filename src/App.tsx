@@ -35,7 +35,6 @@ function App() {
   const location = useLocation();
   const navigationType = useNavigationType();
   const navigate = useNavigate();
-  const showTabBar = !location.pathname.startsWith('/workout/');
   const isPushRoute = !TAB_ROUTES.has(location.pathname);
   const touchStart = useRef<{ x: number; y: number } | null>(null);
   const theme = useThemeStore((s) => s.theme);
@@ -114,7 +113,7 @@ function App() {
         </div>
       </main>
       <RestTimer />
-      {showTabBar && <TabBar />}
+      <TabBar />
       <ConfirmDialog />
       <Toast />
     </>

@@ -167,7 +167,7 @@ export function ExerciseDetail() {
           <div className="mb-4 grid grid-cols-2 gap-2">
             <StatCard
               label="Personal record"
-              value={allTimeBest ? formatWeight(allTimeBest.weight, exercise.unit) : '–'}
+              value={allTimeBest ? formatWeight(allTimeBest.weight, allTimeBest.unit) : '–'}
               sub={allTimeBest ? `× ${allTimeBest.reps} reps` : undefined}
               icon={<Trophy size={16} />}
               accent="var(--color-amber)"

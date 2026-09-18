@@ -15,6 +15,7 @@ import {
   toKg,
   WEIGHT_INCREMENT,
   effectiveKg,
+  topSetOf,
 } from '../lib/calculations';
 import { useEscapeToClose } from '../lib/useEscapeToClose';
 import { useCategoryOrdering } from '../lib/useCategoryOrdering';
@@ -178,7 +179,7 @@ export function ActiveWorkout() {
     let isPR = false;
     if (!draft.warmup) {
       const priorBest = personalRecords(workingSets(allSets ?? [])).get(ex.id);
-      isPR = !priorBest || weight > priorBest.weight;
+      isPR = !priorBest || effectiveKg({ weight, unit: ex.unit }) > effectiveKg(priorBest);
     }
 
     await db.sets.add({
@@ -450,8 +451,7 @@ export function ActiveWorkout() {
                   const isOpen = expandedId === ex.id;
                   const last = lastTimeSets(ex.id);
                   const lastWorking = last ? workingSets(last) : [];
-                  const lastTop =
-                    lastWorking.length > 0 ? [...lastWorking].sort((a, b) => b.weight - a.weight)[0] : null;
+                  const lastTop = topSetOf(lastWorking);
                   const suggestion = lastTop && workingLogged.length === 0 ? suggestNextTarget(lastTop) : null;
                   const draft = draftFor(ex);
                   // Only computed while the card is open — it scans all of this exercise's history,

@@ -8,6 +8,7 @@ import { buildBackup, downloadBackup, isValidBackup, restoreBackup } from '../li
 import { notificationStatus, requestNotificationPermission, type NotificationStatus } from '../lib/notifications';
 import { confirmDialog } from '../store/dialogStore';
 import { showToast } from '../store/toastStore';
+import { ThemeSwitcher } from '../components/ThemeSwitcher';
 
 export function Settings() {
   const navigate = useNavigate();
@@ -103,6 +104,8 @@ export function Settings() {
       </button>
 
       <h1 className="mb-5 text-2xl font-bold">Settings</h1>
+
+      <ThemeSwitcher />
 
       <div className="mb-4 rounded-2xl border-2 border-[var(--color-border)] bg-[var(--color-surface)] p-4">
         <h2 className="mb-1 text-sm font-semibold text-[var(--color-text-dim)]">Profile</h2>

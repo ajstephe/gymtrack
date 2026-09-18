@@ -232,7 +232,7 @@ export function ExerciseCard({
               <span className="text-xs font-medium text-[var(--color-text-dim)]">
                 Personal best:{' '}
                 <span className="font-bold text-[var(--color-text)]">
-                  {formatWeight(personalBest.weight, ex.unit)} × {personalBest.reps}
+                  {formatWeight(personalBest.weight, personalBest.unit)} × {personalBest.reps}
                 </span>
               </span>
             </div>

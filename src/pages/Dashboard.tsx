@@ -466,7 +466,7 @@ export function Dashboard() {
                     </div>
                   </div>
                   <div className="rounded-full bg-[var(--color-amber)]/15 px-2.5 py-1 text-xs font-semibold text-[var(--color-amber)]">
-                    {ex ? formatWeight(pr.weight, ex.unit) : pr.weight} × {pr.reps}
+                    {formatWeight(pr.weight, pr.unit)} × {pr.reps}
                   </div>
                 </Link>
               );

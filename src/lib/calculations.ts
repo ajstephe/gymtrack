@@ -210,11 +210,18 @@ export function currentStreak(sessions: WorkoutSession[]): number {
 export interface PersonalRecord {
   exerciseId: string;
   weight: number;
+  unit: WeightUnit;
   reps: number;
   achievedAt: string;
 }
 
-/** For each exercise, returns its all-time best set (by weight, tie-break by reps). */
+/**
+ * For each exercise, returns its all-time best set (by kg-equivalent weight, tie-break by reps).
+ * A set's own `weight`/`unit` are carried through for display (so a "stack" PR still shows its
+ * pin number, e.g. "#12"), but which set WINS is decided by effectiveKg — comparing raw numbers
+ * would be wrong whenever an exercise's logged history mixes units (e.g. it was switched from kg
+ * to stack at some point), since a stack pin number is nowhere near its kg-equivalent value.
+ */
 export function personalRecords(sets: SetEntry[]): Map<string, PersonalRecord> {
   const byExercise = new Map<string, SetEntry[]>();
   for (const s of sets) {
@@ -228,9 +235,12 @@ export function personalRecords(sets: SetEntry[]): Map<string, PersonalRecord> {
       (a, b) => parseISO(a.completedAt).getTime() - parseISO(b.completedAt).getTime()
     );
     let best: PersonalRecord | null = null;
+    let bestKg = -Infinity;
     for (const s of sorted) {
-      if (!best || s.weight > best.weight || (s.weight === best.weight && s.reps > best.reps)) {
-        best = { exerciseId: exId, weight: s.weight, reps: s.reps, achievedAt: s.completedAt };
+      const kg = effectiveKg(s);
+      if (!best || kg > bestKg || (kg === bestKg && s.reps > best.reps)) {
+        best = { exerciseId: exId, weight: s.weight, unit: s.unit, reps: s.reps, achievedAt: s.completedAt };
+        bestKg = kg;
       }
     }
     if (best) result.set(exId, best);
@@ -238,7 +248,8 @@ export function personalRecords(sets: SetEntry[]): Map<string, PersonalRecord> {
   return result;
 }
 
-/** Sets that were a new all-time-best weight for their exercise at the moment they were logged, within the last N days. */
+/** Sets that were a new all-time-best weight (by kg-equivalent, see personalRecords) for their
+ * exercise at the moment they were logged, within the last N days. */
 export function recentPRs(sets: SetEntry[], withinDays = 7): (PersonalRecord & { exerciseId: string })[] {
   const byExercise = new Map<string, SetEntry[]>();
   for (const s of sets) {
@@ -252,12 +263,13 @@ export function recentPRs(sets: SetEntry[], withinDays = 7): (PersonalRecord & {
     const sorted = [...exSets].sort(
       (a, b) => parseISO(a.completedAt).getTime() - parseISO(b.completedAt).getTime()
     );
-    let runningMax = -Infinity;
+    let runningMaxKg = -Infinity;
     for (const s of sorted) {
-      if (s.weight > runningMax) {
-        runningMax = s.weight;
+      const kg = effectiveKg(s);
+      if (kg > runningMaxKg) {
+        runningMaxKg = kg;
         if (parseISO(s.completedAt).getTime() >= cutoff) {
-          prs.push({ exerciseId: exId, weight: s.weight, reps: s.reps, achievedAt: s.completedAt });
+          prs.push({ exerciseId: exId, weight: s.weight, unit: s.unit, reps: s.reps, achievedAt: s.completedAt });
         }
       }
     }
@@ -265,9 +277,10 @@ export function recentPRs(sets: SetEntry[], withinDays = 7): (PersonalRecord & {
   return prs.sort((a, b) => parseISO(b.achievedAt).getTime() - parseISO(a.achievedAt).getTime());
 }
 
+/** The heaviest set (by kg-equivalent — see personalRecords) among the given sets, tie-break by reps. */
 export function topSetOf(sets: SetEntry[]): SetEntry | null {
   if (sets.length === 0) return null;
-  return [...sets].sort((a, b) => b.weight - a.weight || b.reps - a.reps)[0];
+  return [...sets].sort((a, b) => effectiveKg(b) - effectiveKg(a) || b.reps - a.reps)[0];
 }
 
 export interface SessionBest {

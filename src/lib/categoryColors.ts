@@ -12,21 +12,13 @@ const PALETTES: Record<Theme, string[]> = {
     '#00897f', // primary teal
     '#7b2cbf', // primary-2 purple
   ],
-  neon80s: [
-    '#ff2e9d', // hot pink
-    '#00e5ff', // cyan
-    '#b967ff', // purple
-    '#ff9e2c', // orange
-    '#d4ff3f', // acid lime
-    '#ff2d55', // red
-  ],
   cupertino: [
-    '#ff375f', // pink
-    '#0a84ff', // blue
-    '#bf5af2', // purple
-    '#ff9f0a', // orange
-    '#30d158', // green
-    '#ffd60a', // yellow
+    '#ff2d55', // pink
+    '#007aff', // blue
+    '#af52de', // purple
+    '#ff9500', // orange
+    '#248a3d', // green, darkened for legibility as text
+    '#a2845e', // brown
   ],
   nordic: [
     '#c17a52', // terracotta

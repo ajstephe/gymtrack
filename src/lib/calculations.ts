@@ -23,6 +23,47 @@ export function toKg(weight: number, unit: 'kg' | 'lb'): number {
 }
 
 /**
+ * A "stack" set is logged by pin number (1, 2, 3…), not weight, since that's what's actually
+ * dialed in at the machine — but pin numbers aren't evenly spaced in kg, so summing them directly
+ * (as volume math does with every other unit) would be meaningless. This maps pin number to the
+ * plate's stamped kg value, read off the stack in the gym.
+ */
+const STACK_TO_KG: Record<number, number> = {
+  1: 12.5,
+  2: 15,
+  3: 17.5,
+  4: 23,
+  5: 28.5,
+  6: 34,
+  7: 39.5,
+  8: 45,
+  9: 50.5,
+  10: 56,
+  11: 61.5,
+  12: 67,
+  13: 72.5,
+  14: 78,
+  15: 83.5,
+  16: 89,
+  17: 94.5,
+  18: 100,
+};
+const STACK_PINS = Object.keys(STACK_TO_KG).map(Number).sort((a, b) => a - b);
+const STACK_MIN_PIN = STACK_PINS[0];
+const STACK_MAX_PIN = STACK_PINS[STACK_PINS.length - 1];
+
+/** Pin number → kg, clamped to the known stack range and rounded to the nearest pin. */
+export function stackToKg(pin: number): number {
+  const nearest = Math.min(STACK_MAX_PIN, Math.max(STACK_MIN_PIN, Math.round(pin)));
+  return STACK_TO_KG[nearest];
+}
+
+/** A set's weight for volume math — "stack" sets store a pin number, so convert those to kg. */
+export function effectiveKg(set: Pick<SetEntry, 'weight' | 'unit'>): number {
+  return set.unit === 'stack' ? stackToKg(set.weight) : set.weight;
+}
+
+/**
  * Rough active-calorie estimate for a resistance-training session, using the standard MET
  * (metabolic equivalent) formula: kcal = MET x body weight (kg) x duration (hours). There's no
  * heart-rate data to work from here, so MET is picked from volume moved per minute as a proxy for
@@ -78,7 +119,7 @@ export function suggestNextTarget(last: SetEntry): ProgressionSuggestion {
 }
 
 export function volumeOf(sets: SetEntry[]): number {
-  return sets.reduce((sum, s) => sum + s.weight * s.reps, 0);
+  return sets.reduce((sum, s) => sum + effectiveKg(s) * s.reps, 0);
 }
 
 export function weekBounds(date: Date) {
@@ -96,7 +137,7 @@ export function weeklyVolumeSeries(sets: SetEntry[], weeks = 8) {
         const d = parseISO(s.completedAt);
         return d >= start && d <= end;
       })
-      .reduce((sum, s) => sum + s.weight * s.reps, 0);
+      .reduce((sum, s) => sum + effectiveKg(s) * s.reps, 0);
     buckets.push({ label: format(start, 'MMM d'), volume: Math.round(volume), weekStart: start });
   }
   return buckets;
@@ -127,7 +168,7 @@ export function weeklyVolumeByCategory(
       const d = parseISO(s.completedAt);
       if (d < start || d > end) continue;
       const category = categoryOf.get(s.exerciseId) ?? 'Other';
-      const vol = s.weight * s.reps;
+      const vol = effectiveKg(s) * s.reps;
       byCategory[category] = (byCategory[category] ?? 0) + vol;
       total += vol;
       categoriesSeen.add(category);

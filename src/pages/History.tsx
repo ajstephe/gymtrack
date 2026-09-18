@@ -4,6 +4,7 @@ import { ChevronRight, Dumbbell } from 'lucide-react';
 import { db } from '../data/db';
 import { EmptyState } from '../components/EmptyState';
 import { formatVolume } from '../lib/format';
+import { effectiveKg } from '../lib/calculations';
 
 export function History() {
   const sessions = useLiveQuery(async () => {
@@ -29,7 +30,7 @@ export function History() {
         <div className="flex flex-col gap-2">
           {sessions.map((s) => {
             const sessionSets = sets.filter((x) => x.sessionId === s.id);
-            const volume = sessionSets.reduce((sum, x) => sum + x.weight * x.reps, 0);
+            const volume = sessionSets.reduce((sum, x) => sum + effectiveKg(x) * x.reps, 0);
             const durationMin = s.endedAt
               ? Math.max(1, Math.round((new Date(s.endedAt).getTime() - new Date(s.startedAt).getTime()) / 60000))
               : null;

@@ -10,7 +10,7 @@ import { EmptyState } from '../components/EmptyState';
 import { ExercisePhotoCard } from '../components/ExercisePhoto';
 import { CategorySelect } from '../components/CategorySelect';
 import { Spinner } from '../components/Spinner';
-import { estOneRepMax, topSetOf, workingSets } from '../lib/calculations';
+import { estOneRepMax, effectiveKg, topSetOf, workingSets } from '../lib/calculations';
 import { formatWeight, weightTypeLabel, trimNum } from '../lib/format';
 import { UNIT_OPTIONS } from '../lib/unitOptions';
 import { useEscapeToClose } from '../lib/useEscapeToClose';
@@ -88,7 +88,8 @@ export function ExerciseDetail() {
   }));
 
   const allTimeBest = working.length > 0 ? topSetOf(working) : null;
-  const bestE1rm = working.length > 0 ? Math.max(...working.map((s) => estOneRepMax(s.weight, s.reps))) : null;
+  const bestE1rm =
+    working.length > 0 ? Math.max(...working.map((s) => estOneRepMax(effectiveKg(s), s.reps))) : null;
   const lastSession = bySession[bySession.length - 1];
 
   const siblingCategories = useMemo(() => {
@@ -173,7 +174,10 @@ export function ExerciseDetail() {
             />
             <StatCard
               label="Est. 1RM"
-              value={bestE1rm ? formatWeight(Math.round(bestE1rm), exercise.unit) : '–'}
+              // A stack set's weight is a pin number, not kg — its 1RM projection has no
+              // corresponding pin, so show it in kg (what the formula actually estimates)
+              // rather than mislabeling it with the stack "#" prefix.
+              value={bestE1rm ? formatWeight(Math.round(bestE1rm), exercise.unit === 'stack' ? 'kg' : exercise.unit) : '–'}
               icon={<TrendingUp size={16} />}
               accent="var(--color-lime)"
             />

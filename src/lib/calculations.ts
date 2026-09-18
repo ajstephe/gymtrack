@@ -290,7 +290,12 @@ export function sessionBests(sets: SetEntry[]): SessionBest[] {
   for (const sessionSets of bySession.values()) {
     const top = topSetOf(sessionSets);
     if (!top) continue;
-    result.push({ date: top.completedAt, weight: top.weight, reps: top.reps, e1rm: Math.round(estOneRepMax(top.weight, top.reps)) });
+    result.push({
+      date: top.completedAt,
+      weight: top.weight,
+      reps: top.reps,
+      e1rm: Math.round(estOneRepMax(effectiveKg(top), top.reps)),
+    });
   }
   return result.sort((a, b) => a.date.localeCompare(b.date));
 }

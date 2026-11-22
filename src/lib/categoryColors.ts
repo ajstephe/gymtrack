@@ -36,6 +36,22 @@ const PALETTES: Record<Theme, string[]> = {
     '#b8735f', // clay
     '#8b8578', // stone
   ],
+  miamiDay: [
+    '#d81e78', // hot pink, darkened for legibility as text
+    '#0e8f85', // teal
+    '#7a2cb0', // violet
+    '#e8720a', // sunset orange, darkened
+    '#d93c53', // coral red
+    '#1f6fae', // ocean blue
+  ],
+  miamiNight: [
+    '#00e5ff', // cyan
+    '#ff2d95', // hot pink
+    '#baff29', // acid lime
+    '#ff7e33', // neon orange
+    '#b14dff', // violet
+    '#ffe147', // neon yellow
+  ],
 };
 
 /** Deterministic per-category color so e.g. "Chest" is always the same color everywhere. */

@@ -27,6 +27,14 @@
 @import "@fontsource/fraunces/latin-400-italic.css";
 @import "@fontsource/fraunces/latin-500.css";
 
+@import "@fontsource/audiowide/latin-400.css";
+@import "@fontsource/orbitron/latin-700.css";
+@import "@fontsource/orbitron/latin-900.css";
+@import "@fontsource/poppins/latin-400.css";
+@import "@fontsource/poppins/latin-500.css";
+@import "@fontsource/poppins/latin-600.css";
+@import "@fontsource/poppins/latin-700.css";
+
 @theme {
   --font-sans: "Nunito Sans", system-ui, sans-serif;
   --font-display: "Titan One", "Nunito Sans", system-ui, sans-serif;
@@ -115,6 +123,60 @@ html[data-theme="nordic"] {
   --font-sans: "DM Sans", "Arial", sans-serif;
   --font-display: "Space Grotesk", "Arial", sans-serif;
   --font-mono: "Fraunces", Georgia, serif;
+}
+
+/* Vice-City sunset: pastel coral/teal daytime streets, hot-pink neon after dark — both built
+   around the same Audiowide/Orbitron/Poppins type trio so switching day<->night reads as a
+   time-of-day change, not a different app. */
+html[data-theme="miamiDay"] {
+  color-scheme: light;
+  --color-bg: #fdf0e3;
+  --color-surface: #fffaf2;
+  --color-surface-2: #d8f3ee;
+  --color-border: #d81e78;
+  --color-text: #241233;
+  --color-text-dim: #6e577f;
+  --color-text-faint: #a593b4;
+  --color-primary: #ff2f84;
+  --color-primary-2: #00a99b;
+  --color-lime: #a9d928;
+  --color-crimson: #ff5a5f;
+  --color-azure: #17b8cf;
+  --color-amber: #ffac12;
+  --color-danger: #e8294a;
+  --font-sans: "Poppins", "Nunito Sans", system-ui, sans-serif;
+  --font-display: "Audiowide", "Poppins", system-ui, sans-serif;
+  --font-mono: "Orbitron", "Poppins", system-ui, sans-serif;
+}
+
+html[data-theme="miamiNight"] {
+  color-scheme: dark;
+  --color-bg: #190c2e;
+  --color-surface: #251443;
+  --color-surface-2: #34205c;
+  --color-border: #ff2d95;
+  --color-text: #fdf3ff;
+  --color-text-dim: #c6a3e8;
+  --color-text-faint: #8a6bb0;
+  --color-primary: #00e5ff;
+  --color-primary-2: #ff2d95;
+  --color-lime: #baff29;
+  --color-crimson: #ff2d6b;
+  --color-azure: #22d3ee;
+  --color-amber: #ff7e33;
+  --color-danger: #ff3860;
+  --font-sans: "Poppins", "Nunito Sans", system-ui, sans-serif;
+  --font-display: "Audiowide", "Poppins", system-ui, sans-serif;
+  --font-mono: "Orbitron", "Poppins", system-ui, sans-serif;
+}
+
+/* The poster-paper dot texture is tuned for a light ground — swap in a neon-pink-on-dark version
+   for Miami Night, same treatment as Cupertino Dark gets below. */
+html[data-theme="miamiNight"] body {
+  background:
+    radial-gradient(rgba(255, 45, 149, 0.1) 1px, transparent 1px) 0 0 / 10px 10px,
+    var(--color-bg);
+  background-attachment: fixed;
 }
 
 html[data-theme="cupertino"] .card-bevel,

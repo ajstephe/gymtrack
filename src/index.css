@@ -190,6 +190,15 @@ html[data-theme="cupertinoDark"] body {
   position: relative;
 }
 
+/* Unfolded/tablet-width screens get the side nav instead of the bottom tab bar, so #root switches
+   to a row layout (rail + content) and relaxes the single-column width cap. */
+@media (min-width: 768px) {
+  #root {
+    max-width: 1100px;
+    flex-direction: row;
+  }
+}
+
 input, button, textarea, select {
   font-family: inherit;
 }

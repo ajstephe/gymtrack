@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { ChevronDown, Check, X, Flame, Plus, Minus, SlidersHorizontal, Repeat, Trophy, Play, Square, CheckCircle2 } from 'lucide-react';
+import { ChevronDown, Check, X, Flame, Plus, Minus, SlidersHorizontal, Repeat, Trophy } from 'lucide-react';
 import { formatWeight, trimNum } from '../lib/format';
-import type { Exercise, ExerciseStatus, SetEntry } from '../data/types';
+import type { Exercise, SetEntry } from '../data/types';
 import type { PersonalRecord, ProgressionSuggestion, SessionBest } from '../lib/calculations';
 import { ExercisePhotoThumb, ExercisePhotoButton } from './ExercisePhoto';
 import { Collapse } from './Collapse';
@@ -43,8 +43,6 @@ export function ExerciseCard({
   onBumpWeight,
   onBumpReps,
   onUpdateSetupNote,
-  status,
-  onCycleStatus,
   editingSetId,
   editDraft,
   onEditDraftChange,
@@ -71,8 +69,6 @@ export function ExerciseCard({
   onBumpWeight: (delta: 1 | -1) => void;
   onBumpReps: (delta: 1 | -1) => void;
   onUpdateSetupNote: (note: string) => void;
-  status: ExerciseStatus | undefined;
-  onCycleStatus: () => void;
   editingSetId: string | null;
   editDraft: SetEditDraft;
   onEditDraftChange: (patch: Partial<SetEditDraft>) => void;
@@ -114,12 +110,6 @@ export function ExerciseCard({
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <span className="truncate font-medium">{ex.name}</span>
-              {status === 'done' && (
-                <CheckCircle2 size={15} className="shrink-0 text-[var(--color-primary)]" aria-label="Done" />
-              )}
-              {status === 'in_progress' && (
-                <span className="h-2 w-2 shrink-0 rounded-full bg-[var(--color-amber)]" aria-label="In progress" />
-              )}
               {logged.length > 0 && (
                 <span className="shrink-0 rounded-full bg-[var(--color-lime)] px-2 py-0.5 text-[10px] font-semibold text-[var(--color-text)]">
                   {logged.length} set{logged.length > 1 ? 's' : ''}
@@ -194,32 +184,6 @@ export function ExerciseCard({
               </button>
             )}
           </div>
-
-          <button
-            type="button"
-            onClick={onCycleStatus}
-            className={`mb-3 flex w-full items-center justify-center gap-1.5 rounded-xl border-2 border-[var(--color-border)] py-2 text-sm font-semibold transition active:scale-[0.98] ${
-              status === 'done'
-                ? 'bg-[var(--color-primary)] text-white'
-                : status === 'in_progress'
-                  ? 'bg-[var(--color-amber)] text-[var(--color-text)]'
-                  : 'bg-[var(--color-surface-2)] text-[var(--color-text-dim)]'
-            }`}
-          >
-            {status === 'done' ? (
-              <>
-                <CheckCircle2 size={15} /> Done — tap to add or edit
-              </>
-            ) : status === 'in_progress' ? (
-              <>
-                <Square size={13} /> Stop
-              </>
-            ) : (
-              <>
-                <Play size={13} /> Start
-              </>
-            )}
-          </button>
 
           {personalBest && (
             <div className="mb-3 flex items-center gap-2 rounded-xl bg-[var(--color-amber)]/12 px-3 py-2">

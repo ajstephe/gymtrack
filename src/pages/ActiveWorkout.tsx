@@ -18,6 +18,7 @@ import {
 } from '../lib/calculations';
 import { useEscapeToClose } from '../lib/useEscapeToClose';
 import { useCategoryOrdering } from '../lib/useCategoryOrdering';
+import { categoryColor } from '../lib/categoryColors';
 import { hapticTap, hapticSuccess } from '../lib/haptics';
 import { showToast } from '../store/toastStore';
 import { CategoryHeader } from '../components/CategoryHeader';
@@ -103,6 +104,19 @@ export function ActiveWorkout() {
       else next.add(category);
       return next;
     });
+  }
+
+  // Expands the category (its header's own position doesn't move when its content does, so this
+  // is safe to scroll to immediately, no need to wait for the expand animation) and scrolls it
+  // into view — the jump-bar's whole purpose is skipping past everything above it.
+  function jumpToCategory(category: string) {
+    setCollapsedCategories((prev) => {
+      if (!prev.has(category)) return prev;
+      const next = new Set(prev);
+      next.delete(category);
+      return next;
+    });
+    document.getElementById(`cat-${category}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   const personalBests = useMemo(() => personalRecords(workingSets(allSets ?? [])), [allSets]);
@@ -387,6 +401,25 @@ export function ActiveWorkout() {
         </div>
       )}
 
+      {!exerciseQuery.trim() && visibleCategories.length > 1 && (
+        <div className="sticky top-0 z-20 -mx-4 mb-3 flex gap-1.5 overflow-x-auto bg-[var(--color-bg)] px-4 py-2 pr-24 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {visibleCategories.map(({ category }) => (
+            <button
+              key={category}
+              onClick={() => jumpToCategory(category)}
+              className="flex shrink-0 items-center gap-1.5 rounded-full border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 py-1.5 text-xs font-semibold text-[var(--color-text-dim)] transition active:scale-95"
+            >
+              <span
+                className="h-2 w-2 shrink-0 rounded-full"
+                style={{ background: categoryColor(category) }}
+                aria-hidden="true"
+              />
+              {category}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="flex flex-col gap-5 pb-24">
         {visibleCategories.map(({ category, exercises: exList }, i) => {
           const isCollapsed = !exerciseQuery.trim() && collapsedCategories.has(category);
@@ -395,6 +428,7 @@ export function ActiveWorkout() {
           return (
           <div
             key={category}
+            id={`cat-${category}`}
             ref={dragReorder.registerNode(category)}
             style={
               isDragging

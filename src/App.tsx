@@ -112,7 +112,7 @@ function App() {
     <>
       <SideNav />
       <div className="flex min-h-0 flex-1 flex-col">
-        <main className="safe-top flex min-h-0 flex-1 flex-col overflow-y-auto pb-6">
+        <main className="safe-top flex min-h-0 flex-1 flex-col pb-6">
           <div key={transitionKey} className={`flex min-h-0 flex-1 flex-col ${transitionClass}`}>
             <Suspense fallback={<Spinner />}>
               <Routes>

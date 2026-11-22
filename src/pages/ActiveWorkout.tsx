@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { X, Plus, Scale, StickyNote, Search, ArrowUpDown } from 'lucide-react';
 import { db, newId } from '../data/db';
 import { useSessionStore } from '../store/sessionStore';
-import { useRestTimerStore } from '../store/restTimerStore';
 import { formatWeight, formatDuration, trimNum } from '../lib/format';
 import {
   workingSets,
@@ -19,6 +18,7 @@ import {
 } from '../lib/calculations';
 import { useEscapeToClose } from '../lib/useEscapeToClose';
 import { useCategoryOrdering } from '../lib/useCategoryOrdering';
+import { categoryColor } from '../lib/categoryColors';
 import { hapticTap, hapticSuccess } from '../lib/haptics';
 import { showToast } from '../store/toastStore';
 import { CategoryHeader } from '../components/CategoryHeader';
@@ -32,9 +32,7 @@ import type { Exercise, SetEntry } from '../data/types';
 export function ActiveWorkout() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
-  const location = useLocation();
   const setActiveSessionId = useSessionStore((s) => s.setActiveSessionId);
-  const startTimer = useRestTimerStore((s) => s.start);
 
   const session = useLiveQuery(() => (sessionId ? db.sessions.get(sessionId) : undefined), [sessionId]);
   const routine = useLiveQuery(
@@ -60,7 +58,6 @@ export function ActiveWorkout() {
   // different exercise, not just minimizing this one, should move the highlight.
   const [activeExerciseId, setActiveExerciseId] = useState<string | null>(null);
   const [elapsed, setElapsed] = useState(0);
-  const [restDuration, setRestDuration] = useState(90);
   const [showBodyWeight, setShowBodyWeight] = useState(false);
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
   const [showAddExercise, setShowAddExercise] = useState(false);
@@ -100,29 +97,6 @@ export function ActiveWorkout() {
     }
   }, [categories]);
 
-  // Jumped here from the rest timer (or anywhere else linking to #ex-<id>) — expand that
-  // exercise's card and category, then scroll it into view. Genuinely synchronizing with an
-  // external system (browser navigation), not state derivable during render.
-  /* eslint-disable react/set-state-in-effect */
-  useEffect(() => {
-    if (!exercises) return;
-    const target = exercises.find((e) => location.hash === `#ex-${e.id}`);
-    if (!target) return;
-    setExpandedId(target.id);
-    setActiveExerciseId(target.id);
-    setCollapsedCategories((prev) => {
-      if (!prev.has(target.category)) return prev;
-      const next = new Set(prev);
-      next.delete(target.category);
-      return next;
-    });
-    const t = setTimeout(() => {
-      document.getElementById(`ex-${target.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 150);
-    return () => clearTimeout(t);
-  }, [location.hash, exercises]);
-  /* eslint-enable react/set-state-in-effect */
-
   function toggleCategory(category: string) {
     setCollapsedCategories((prev) => {
       const next = new Set(prev);
@@ -130,6 +104,19 @@ export function ActiveWorkout() {
       else next.add(category);
       return next;
     });
+  }
+
+  // Expands the category (its header's own position doesn't move when its content does, so this
+  // is safe to scroll to immediately, no need to wait for the expand animation) and scrolls it
+  // into view — the jump-bar's whole purpose is skipping past everything above it.
+  function jumpToCategory(category: string) {
+    setCollapsedCategories((prev) => {
+      if (!prev.has(category)) return prev;
+      const next = new Set(prev);
+      next.delete(category);
+      return next;
+    });
+    document.getElementById(`cat-${category}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   const personalBests = useMemo(() => personalRecords(workingSets(allSets ?? [])), [allSets]);
@@ -199,7 +186,6 @@ export function ActiveWorkout() {
       delete next[ex.id];
       return next;
     });
-    startTimer(restDuration, ex.name, ex.id, sessionId);
 
     if (isPR && weight > 0) {
       hapticSuccess();
@@ -245,7 +231,6 @@ export function ActiveWorkout() {
       rpe: last.rpe,
       completedAt: new Date().toISOString(),
     });
-    startTimer(restDuration, ex.name, ex.id, sessionId);
     hapticTap();
   }
 
@@ -416,6 +401,25 @@ export function ActiveWorkout() {
         </div>
       )}
 
+      {!exerciseQuery.trim() && visibleCategories.length > 1 && (
+        <div className="sticky top-0 z-20 -mx-4 mb-3 flex gap-1.5 overflow-x-auto bg-[var(--color-bg)] px-4 py-2 pr-24 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {visibleCategories.map(({ category }) => (
+            <button
+              key={category}
+              onClick={() => jumpToCategory(category)}
+              className="flex shrink-0 items-center gap-1.5 rounded-full border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 py-1.5 text-xs font-semibold text-[var(--color-text-dim)] transition active:scale-95"
+            >
+              <span
+                className="h-2 w-2 shrink-0 rounded-full"
+                style={{ background: categoryColor(category) }}
+                aria-hidden="true"
+              />
+              {category}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="flex flex-col gap-5 pb-24">
         {visibleCategories.map(({ category, exercises: exList }, i) => {
           const isCollapsed = !exerciseQuery.trim() && collapsedCategories.has(category);
@@ -424,6 +428,7 @@ export function ActiveWorkout() {
           return (
           <div
             key={category}
+            id={`cat-${category}`}
             ref={dragReorder.registerNode(category)}
             style={
               isDragging
@@ -497,8 +502,6 @@ export function ActiveWorkout() {
                       onSaveEditSet={saveEditSet}
                       onCancelEditSet={() => setEditingSetId(null)}
                       onDeleteSet={deleteSet}
-                      restDuration={restDuration}
-                      onSetRestDuration={setRestDuration}
                     />
                   );
                 })}

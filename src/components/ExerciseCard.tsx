@@ -8,7 +8,6 @@ import { Collapse } from './Collapse';
 import { SwipeToDelete } from './SwipeToDelete';
 import { ProgressChart } from './ProgressChart';
 
-const REST_PRESETS = [60, 90, 120, 180];
 const RPE_OPTIONS = [6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10];
 const WEIGHT_UNIT_OPTIONS = ['kg', 'lb', 'stack'] as const;
 
@@ -53,8 +52,6 @@ export function ExerciseCard({
   onSaveEditSet,
   onCancelEditSet,
   onDeleteSet,
-  restDuration,
-  onSetRestDuration,
 }: {
   ex: Exercise;
   isOpen: boolean;
@@ -83,8 +80,6 @@ export function ExerciseCard({
   onSaveEditSet: (s: SetEntry) => void;
   onCancelEditSet: () => void;
   onDeleteSet: (id: string) => void;
-  restDuration: number;
-  onSetRestDuration: (n: number) => void;
 }) {
   const [optionsOpen, setOptionsOpen] = useState(false);
   const [editingNote, setEditingNote] = useState(false);
@@ -488,69 +483,48 @@ export function ExerciseCard({
             >
               <SlidersHorizontal size={12} />
               Options
-              {(draft.rpe !== '' || restDuration !== 90) && (
-                <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-primary)]" />
-              )}
+              {draft.rpe !== '' && <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-primary)]" />}
               <ChevronDown size={12} className={`transition-transform ${optionsOpen ? 'rotate-180' : ''}`} />
             </button>
           </div>
 
           <Collapse open={optionsOpen}>
             <div className="pb-3">
-              <div className="mb-3">
-                <div className="mb-1.5 flex items-center justify-between">
-                  <span className="text-[10px] uppercase tracking-wide text-[var(--color-text-faint)]">
-                    <span aria-hidden="true">😣</span> Rate of Perceived Exertion (RPE)
-                    {draft.rpe !== '' ? ` — ${trimNum(parseFloat(draft.rpe))}` : ''}
-                  </span>
-                  {draft.rpe !== '' && (
-                    <button
-                      onClick={() => onUpdateDraft({ rpe: '' })}
-                      className="text-[10px] font-bold uppercase text-[var(--color-text-faint)] underline active:text-[var(--color-danger)]"
-                    >
-                      Clear
-                    </button>
-                  )}
-                </div>
-                <div className="relative h-5 overflow-hidden rounded-full border-2 border-[var(--color-border)] bg-[var(--color-surface-2)]">
-                  <div
-                    className="absolute inset-y-0 left-0 transition-[width]"
-                    style={{
-                      width:
-                        draft.rpe !== ''
-                          ? `${((RPE_OPTIONS.indexOf(parseFloat(draft.rpe)) + 1) / RPE_OPTIONS.length) * 100}%`
-                          : '0%',
-                      background: 'linear-gradient(90deg, var(--color-lime), var(--color-amber), var(--color-crimson))',
-                    }}
-                  />
-                  <div className="absolute inset-0 flex">
-                    {RPE_OPTIONS.map((r) => (
-                      <button
-                        key={r}
-                        onClick={() => onUpdateDraft({ rpe: String(r) })}
-                        aria-label={`RPE ${trimNum(r)}`}
-                        className="flex-1 border-r-2 border-[var(--color-border)]/50 last:border-r-0 active:scale-y-90"
-                      />
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-1.5">
-                <span className="text-[10px] uppercase tracking-wide text-[var(--color-text-faint)]">Rest</span>
-                {REST_PRESETS.map((p) => (
+              <div className="mb-1.5 flex items-center justify-between">
+                <span className="text-[10px] uppercase tracking-wide text-[var(--color-text-faint)]">
+                  <span aria-hidden="true">😣</span> Rate of Perceived Exertion (RPE)
+                  {draft.rpe !== '' ? ` — ${trimNum(parseFloat(draft.rpe))}` : ''}
+                </span>
+                {draft.rpe !== '' && (
                   <button
-                    key={p}
-                    onClick={() => onSetRestDuration(p)}
-                    className={`rounded-full border-2 border-[var(--color-border)] px-2.5 py-1 text-xs font-medium transition active:scale-95 ${
-                      restDuration === p
-                        ? 'bg-[var(--color-primary)] text-white'
-                        : 'bg-[var(--color-surface-2)] text-[var(--color-text-dim)]'
-                    }`}
+                    onClick={() => onUpdateDraft({ rpe: '' })}
+                    className="text-[10px] font-bold uppercase text-[var(--color-text-faint)] underline active:text-[var(--color-danger)]"
                   >
-                    {p}s
+                    Clear
                   </button>
-                ))}
+                )}
+              </div>
+              <div className="relative h-5 overflow-hidden rounded-full border-2 border-[var(--color-border)] bg-[var(--color-surface-2)]">
+                <div
+                  className="absolute inset-y-0 left-0 transition-[width]"
+                  style={{
+                    width:
+                      draft.rpe !== ''
+                        ? `${((RPE_OPTIONS.indexOf(parseFloat(draft.rpe)) + 1) / RPE_OPTIONS.length) * 100}%`
+                        : '0%',
+                    background: 'linear-gradient(90deg, var(--color-lime), var(--color-amber), var(--color-crimson))',
+                  }}
+                />
+                <div className="absolute inset-0 flex">
+                  {RPE_OPTIONS.map((r) => (
+                    <button
+                      key={r}
+                      onClick={() => onUpdateDraft({ rpe: String(r) })}
+                      aria-label={`RPE ${trimNum(r)}`}
+                      className="flex-1 border-r-2 border-[var(--color-border)]/50 last:border-r-0 active:scale-y-90"
+                    />
+                  ))}
+                </div>
               </div>
             </div>
           </Collapse>

@@ -9,7 +9,6 @@ import { TabBar } from './components/TabBar';
 import { SideNav } from './components/SideNav';
 import { SplitPane } from './components/SplitPane';
 import { EmptyState } from './components/EmptyState';
-import { RestTimer } from './components/RestTimer';
 import { ConfirmDialog } from './components/ConfirmDialog';
 import { Toast } from './components/Toast';
 import { Spinner } from './components/Spinner';
@@ -113,7 +112,7 @@ function App() {
     <>
       <SideNav />
       <div className="flex min-h-0 flex-1 flex-col">
-        <main className="safe-top flex min-h-0 flex-1 flex-col overflow-y-auto pb-6">
+        <main className="safe-top flex min-h-0 flex-1 flex-col pb-6">
           <div key={transitionKey} className={`flex min-h-0 flex-1 flex-col ${transitionClass}`}>
             <Suspense fallback={<Spinner />}>
               <Routes>
@@ -153,7 +152,6 @@ function App() {
             </Suspense>
           </div>
         </main>
-        <RestTimer />
         <TabBar />
       </div>
       <ConfirmDialog />

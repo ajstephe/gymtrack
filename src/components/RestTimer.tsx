@@ -35,7 +35,7 @@ export function RestTimer() {
   const progress = Math.min(1, Math.max(0, 1 - remainingSec / duration));
 
   return (
-    <div className="fixed inset-x-0 bottom-[64px] z-40 mx-auto max-w-[560px] px-3 pb-2">
+    <div className="fixed inset-x-0 bottom-[64px] z-40 mx-auto max-w-[560px] px-3 pb-2 md:inset-x-auto md:left-[212px] md:right-4 md:bottom-4 md:mx-0 md:max-w-[480px] md:px-0 md:pb-0">
       <div
         className={`card-bevel relative overflow-hidden rounded-2xl border-2 border-[var(--color-border)] ${
           isDone ? 'bg-[var(--color-lime)]' : 'bg-[var(--color-amber)]'

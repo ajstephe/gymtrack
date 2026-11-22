@@ -1,16 +1,6 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { Home, Dumbbell, History, CalendarDays, ListTree, Disc3, Settings } from 'lucide-react';
 import { hapticTap } from '../lib/haptics';
-
-const tabs = [
-  { to: '/', label: 'Home', icon: Home, end: true },
-  { to: '/train', label: 'Train', icon: Dumbbell, end: false },
-  { to: '/history', label: 'History', icon: History, end: false },
-  { to: '/calendar', label: 'Calendar', icon: CalendarDays, end: false },
-  { to: '/exercises', label: 'Exercises', icon: ListTree, end: false },
-  { to: '/plates', label: 'Plates', icon: Disc3, end: false },
-  { to: '/settings', label: 'Settings', icon: Settings, end: false },
-];
+import { navTabs as tabs } from '../lib/navTabs';
 
 export function TabBar() {
   const location = useLocation();
@@ -19,7 +9,7 @@ export function TabBar() {
   );
 
   return (
-    <nav className="sticky bottom-0 z-30 border-t-[3px] border-[var(--color-border)] bg-[var(--color-bg)] px-2 pb-[env(safe-area-inset-bottom)]">
+    <nav className="sticky bottom-0 z-30 border-t-[3px] border-[var(--color-border)] bg-[var(--color-bg)] px-2 pb-[env(safe-area-inset-bottom)] md:hidden">
       <div className="relative flex items-stretch justify-around pt-1.5">
         {activeIndex >= 0 && (
           <div

@@ -185,56 +185,6 @@ export function ExerciseCard({
             )}
           </div>
 
-          {personalBest && (
-            <div className="mb-3 flex items-center gap-2 rounded-xl bg-[var(--color-amber)]/12 px-3 py-2">
-              <Trophy size={14} className="shrink-0 text-[var(--color-amber)]" />
-              <span className="text-xs font-medium text-[var(--color-text-dim)]">
-                Personal best:{' '}
-                <span className="font-bold text-[var(--color-text)]">
-                  {formatWeight(personalBest.weight, personalBest.unit)} × {personalBest.reps}
-                </span>
-              </span>
-            </div>
-          )}
-
-          {progressHistory.length > 0 && (
-            <div>
-              <div className="mb-1.5 text-[10px] uppercase tracking-wide text-[var(--color-text-faint)]">Progress</div>
-              <ProgressChart history={progressHistory} />
-            </div>
-          )}
-
-          {last && last.length > 0 && (
-            <div className="mb-3">
-              <div className="mb-1.5 text-[10px] uppercase tracking-wide text-[var(--color-text-faint)]">
-                Last time ·{' '}
-                {new Date(last[0].completedAt).toLocaleDateString(undefined, {
-                  month: 'short',
-                  day: 'numeric',
-                })}
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {(() => {
-                  let workingIndex = 0;
-                  return last.map((s) => {
-                    if (!s.isWarmup) workingIndex++;
-                    return (
-                      <span
-                        key={s.id}
-                        className="rounded-lg bg-[var(--color-surface-2)] px-2.5 py-1 text-xs font-medium tabular-nums"
-                      >
-                        {s.isWarmup ? <span className="text-[var(--color-amber)]">W</span> : workingIndex}. {formatWeight(s.weight, s.unit)} × {s.reps}
-                        {s.rpe != null && (
-                          <span className="ml-1 font-normal text-[var(--color-text-faint)]">RPE {trimNum(s.rpe)}</span>
-                        )}
-                      </span>
-                    );
-                  });
-                })()}
-              </div>
-            </div>
-          )}
-
           {suggestion && (
             <button
               type="button"
@@ -249,6 +199,159 @@ export function ExerciseCard({
               </span>
             </button>
           )}
+
+          <div className="mb-2.5 flex gap-2.5">
+            <label className="flex-1">
+              <span className="mb-1.5 flex h-5 items-center justify-between">
+                <span className="text-[10px] uppercase tracking-wide text-[var(--color-text-faint)]">Weight</span>
+                <span className="flex shrink-0 overflow-hidden rounded-full border-2 border-[var(--color-border)]">
+                  {WEIGHT_UNIT_OPTIONS.map((u) => (
+                    <button
+                      key={u}
+                      type="button"
+                      onClick={() => onSetUnit(u)}
+                      className={`px-1.5 py-0.5 text-[10px] font-semibold transition active:scale-95 ${
+                        displayUnit === u
+                          ? 'bg-[var(--color-primary)] text-white'
+                          : 'bg-[var(--color-surface-2)] text-[var(--color-text-faint)]'
+                      }`}
+                    >
+                      {u === 'stack' ? 'Stack #' : u}
+                    </button>
+                  ))}
+                </span>
+              </span>
+              <div className="flex items-stretch overflow-hidden rounded-2xl border-2 border-[var(--color-border)] bg-[var(--color-surface-2)]">
+                <button
+                  type="button"
+                  onClick={() => onBumpWeight(-1)}
+                  className="flex w-11 shrink-0 items-center justify-center border-r-2 border-[var(--color-border)] text-[var(--color-text-dim)] transition active:scale-90 active:bg-[var(--color-surface)]"
+                  aria-label="Decrease weight"
+                >
+                  <Minus size={16} />
+                </button>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  value={draft.weight}
+                  onChange={(e) => onUpdateDraft({ weight: e.target.value })}
+                  placeholder="0"
+                  className="w-full min-w-0 bg-transparent py-2.5 text-center font-mono text-2xl font-bold outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => onBumpWeight(1)}
+                  className="flex w-11 shrink-0 items-center justify-center border-l-2 border-[var(--color-border)] text-[var(--color-text-dim)] transition active:scale-90 active:bg-[var(--color-surface)]"
+                  aria-label="Increase weight"
+                >
+                  <Plus size={16} />
+                </button>
+              </div>
+            </label>
+            <label className="flex-1">
+              <span className="mb-1.5 flex h-5 items-center text-[10px] uppercase tracking-wide text-[var(--color-text-faint)]">
+                Reps
+              </span>
+              <div className="flex items-stretch overflow-hidden rounded-2xl border-2 border-[var(--color-border)] bg-[var(--color-surface-2)]">
+                <button
+                  type="button"
+                  onClick={() => onBumpReps(-1)}
+                  className="flex w-11 shrink-0 items-center justify-center border-r-2 border-[var(--color-border)] text-[var(--color-text-dim)] transition active:scale-90 active:bg-[var(--color-surface)]"
+                  aria-label="Decrease reps"
+                >
+                  <Minus size={16} />
+                </button>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  value={draft.reps}
+                  onChange={(e) => onUpdateDraft({ reps: e.target.value })}
+                  placeholder="0"
+                  className="w-full min-w-0 bg-transparent py-2.5 text-center font-mono text-2xl font-bold outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => onBumpReps(1)}
+                  className="flex w-11 shrink-0 items-center justify-center border-l-2 border-[var(--color-border)] text-[var(--color-text-dim)] transition active:scale-90 active:bg-[var(--color-surface)]"
+                  aria-label="Increase reps"
+                >
+                  <Plus size={16} />
+                </button>
+              </div>
+            </label>
+          </div>
+
+          <div className="mb-2 flex items-center gap-2">
+            <button
+              onClick={() => onUpdateDraft({ warmup: !draft.warmup })}
+              className={`flex shrink-0 items-center gap-1 rounded-full border-2 border-[var(--color-border)] px-2.5 py-1 text-xs font-medium transition active:scale-95 ${
+                draft.warmup
+                  ? 'bg-[var(--color-amber)] text-[var(--color-text)]'
+                  : 'bg-[var(--color-surface-2)] text-[var(--color-text-dim)]'
+              }`}
+            >
+              <Flame size={12} /> Warm-up
+            </button>
+            <button
+              type="button"
+              onClick={() => setOptionsOpen((o) => !o)}
+              className="ml-auto flex shrink-0 items-center gap-1.5 rounded-full border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] px-2.5 py-1 text-xs font-medium text-[var(--color-text-dim)] transition active:scale-95"
+            >
+              <SlidersHorizontal size={12} />
+              Options
+              {draft.rpe !== '' && <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-primary)]" />}
+              <ChevronDown size={12} className={`transition-transform ${optionsOpen ? 'rotate-180' : ''}`} />
+            </button>
+          </div>
+
+          <Collapse open={optionsOpen}>
+            <div className="pb-3">
+              <div className="mb-1.5 flex items-center justify-between">
+                <span className="text-[10px] uppercase tracking-wide text-[var(--color-text-faint)]">
+                  <span aria-hidden="true">😣</span> Rate of Perceived Exertion (RPE)
+                  {draft.rpe !== '' ? ` — ${trimNum(parseFloat(draft.rpe))}` : ''}
+                </span>
+                {draft.rpe !== '' && (
+                  <button
+                    onClick={() => onUpdateDraft({ rpe: '' })}
+                    className="text-[10px] font-bold uppercase text-[var(--color-text-faint)] underline active:text-[var(--color-danger)]"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+              <div className="relative h-5 overflow-hidden rounded-full border-2 border-[var(--color-border)] bg-[var(--color-surface-2)]">
+                <div
+                  className="absolute inset-y-0 left-0 transition-[width]"
+                  style={{
+                    width:
+                      draft.rpe !== ''
+                        ? `${((RPE_OPTIONS.indexOf(parseFloat(draft.rpe)) + 1) / RPE_OPTIONS.length) * 100}%`
+                        : '0%',
+                    background: 'linear-gradient(90deg, var(--color-lime), var(--color-amber), var(--color-crimson))',
+                  }}
+                />
+                <div className="absolute inset-0 flex">
+                  {RPE_OPTIONS.map((r) => (
+                    <button
+                      key={r}
+                      onClick={() => onUpdateDraft({ rpe: String(r) })}
+                      aria-label={`RPE ${trimNum(r)}`}
+                      className="flex-1 border-r-2 border-[var(--color-border)]/50 last:border-r-0 active:scale-y-90"
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </Collapse>
+
+          <button
+            onClick={onLogSet}
+            disabled={!draft.reps || (!draft.weight && ex.unit !== 'bodyweight')}
+            className="btn-glow-lime mb-3 flex w-full items-center justify-center gap-1.5 rounded-xl py-2.5 active:scale-[0.98] disabled:opacity-40 disabled:shadow-none"
+          >
+            <Check size={17} strokeWidth={3} /> Log Set
+          </button>
 
           {logged.length > 0 && (
             <div className="mb-3 flex flex-col gap-1.5">
@@ -348,158 +451,55 @@ export function ExerciseCard({
             </div>
           )}
 
-          <div className="mb-2.5 flex gap-2">
-            <label className="flex-1">
-              <span className="mb-1 flex h-5 items-center justify-between">
-                <span className="text-[10px] uppercase tracking-wide text-[var(--color-text-faint)]">Weight</span>
-                <span className="flex shrink-0 overflow-hidden rounded-full border-2 border-[var(--color-border)]">
-                  {WEIGHT_UNIT_OPTIONS.map((u) => (
-                    <button
-                      key={u}
-                      type="button"
-                      onClick={() => onSetUnit(u)}
-                      className={`px-1.5 py-0.5 text-[10px] font-semibold transition active:scale-95 ${
-                        displayUnit === u
-                          ? 'bg-[var(--color-primary)] text-white'
-                          : 'bg-[var(--color-surface-2)] text-[var(--color-text-faint)]'
-                      }`}
-                    >
-                      {u === 'stack' ? 'Stack #' : u}
-                    </button>
-                  ))}
+          {personalBest && (
+            <div className="mb-3 flex items-center gap-2 rounded-xl bg-[var(--color-amber)]/12 px-3 py-2">
+              <Trophy size={14} className="shrink-0 text-[var(--color-amber)]" />
+              <span className="text-xs font-medium text-[var(--color-text-dim)]">
+                Personal best:{' '}
+                <span className="font-bold text-[var(--color-text)]">
+                  {formatWeight(personalBest.weight, personalBest.unit)} × {personalBest.reps}
                 </span>
               </span>
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => onBumpWeight(-1)}
-                  className="flex h-9 w-8 shrink-0 items-center justify-center rounded-lg border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] text-[var(--color-text-dim)] transition active:scale-90"
-                  aria-label="Decrease weight"
-                >
-                  <Minus size={14} />
-                </button>
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  value={draft.weight}
-                  onChange={(e) => onUpdateDraft({ weight: e.target.value })}
-                  placeholder="0"
-                  className="w-full min-w-0 rounded-xl border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] px-2 py-2.5 text-center font-mono text-xl font-bold outline-none"
-                />
-                <button
-                  type="button"
-                  onClick={() => onBumpWeight(1)}
-                  className="flex h-9 w-8 shrink-0 items-center justify-center rounded-lg border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] text-[var(--color-text-dim)] transition active:scale-90"
-                  aria-label="Increase weight"
-                >
-                  <Plus size={14} />
-                </button>
-              </div>
-            </label>
-            <label className="flex-1">
-              <span className="mb-1 flex h-5 items-center text-[10px] uppercase tracking-wide text-[var(--color-text-faint)]">
-                Reps
-              </span>
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => onBumpReps(-1)}
-                  className="flex h-9 w-8 shrink-0 items-center justify-center rounded-lg border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] text-[var(--color-text-dim)] transition active:scale-90"
-                  aria-label="Decrease reps"
-                >
-                  <Minus size={14} />
-                </button>
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  value={draft.reps}
-                  onChange={(e) => onUpdateDraft({ reps: e.target.value })}
-                  placeholder="0"
-                  className="w-full min-w-0 rounded-xl border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] px-2 py-2.5 text-center font-mono text-xl font-bold outline-none"
-                />
-                <button
-                  type="button"
-                  onClick={() => onBumpReps(1)}
-                  className="flex h-9 w-8 shrink-0 items-center justify-center rounded-lg border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] text-[var(--color-text-dim)] transition active:scale-90"
-                  aria-label="Increase reps"
-                >
-                  <Plus size={14} />
-                </button>
-              </div>
-            </label>
-          </div>
+            </div>
+          )}
 
-          <div className="mb-2 flex items-center gap-2">
-            <button
-              onClick={() => onUpdateDraft({ warmup: !draft.warmup })}
-              className={`flex shrink-0 items-center gap-1 rounded-full border-2 border-[var(--color-border)] px-2.5 py-1 text-xs font-medium transition active:scale-95 ${
-                draft.warmup
-                  ? 'bg-[var(--color-amber)] text-[var(--color-text)]'
-                  : 'bg-[var(--color-surface-2)] text-[var(--color-text-dim)]'
-              }`}
-            >
-              <Flame size={12} /> Warm-up
-            </button>
-            <button
-              type="button"
-              onClick={() => setOptionsOpen((o) => !o)}
-              className="ml-auto flex shrink-0 items-center gap-1.5 rounded-full border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] px-2.5 py-1 text-xs font-medium text-[var(--color-text-dim)] transition active:scale-95"
-            >
-              <SlidersHorizontal size={12} />
-              Options
-              {draft.rpe !== '' && <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-primary)]" />}
-              <ChevronDown size={12} className={`transition-transform ${optionsOpen ? 'rotate-180' : ''}`} />
-            </button>
-          </div>
+          {progressHistory.length > 0 && (
+            <div>
+              <div className="mb-1.5 text-[10px] uppercase tracking-wide text-[var(--color-text-faint)]">Progress</div>
+              <ProgressChart history={progressHistory} />
+            </div>
+          )}
 
-          <Collapse open={optionsOpen}>
-            <div className="pb-3">
-              <div className="mb-1.5 flex items-center justify-between">
-                <span className="text-[10px] uppercase tracking-wide text-[var(--color-text-faint)]">
-                  <span aria-hidden="true">😣</span> Rate of Perceived Exertion (RPE)
-                  {draft.rpe !== '' ? ` — ${trimNum(parseFloat(draft.rpe))}` : ''}
-                </span>
-                {draft.rpe !== '' && (
-                  <button
-                    onClick={() => onUpdateDraft({ rpe: '' })}
-                    className="text-[10px] font-bold uppercase text-[var(--color-text-faint)] underline active:text-[var(--color-danger)]"
-                  >
-                    Clear
-                  </button>
-                )}
+          {last && last.length > 0 && (
+            <div>
+              <div className="mb-1.5 text-[10px] uppercase tracking-wide text-[var(--color-text-faint)]">
+                Last time ·{' '}
+                {new Date(last[0].completedAt).toLocaleDateString(undefined, {
+                  month: 'short',
+                  day: 'numeric',
+                })}
               </div>
-              <div className="relative h-5 overflow-hidden rounded-full border-2 border-[var(--color-border)] bg-[var(--color-surface-2)]">
-                <div
-                  className="absolute inset-y-0 left-0 transition-[width]"
-                  style={{
-                    width:
-                      draft.rpe !== ''
-                        ? `${((RPE_OPTIONS.indexOf(parseFloat(draft.rpe)) + 1) / RPE_OPTIONS.length) * 100}%`
-                        : '0%',
-                    background: 'linear-gradient(90deg, var(--color-lime), var(--color-amber), var(--color-crimson))',
-                  }}
-                />
-                <div className="absolute inset-0 flex">
-                  {RPE_OPTIONS.map((r) => (
-                    <button
-                      key={r}
-                      onClick={() => onUpdateDraft({ rpe: String(r) })}
-                      aria-label={`RPE ${trimNum(r)}`}
-                      className="flex-1 border-r-2 border-[var(--color-border)]/50 last:border-r-0 active:scale-y-90"
-                    />
-                  ))}
-                </div>
+              <div className="flex flex-wrap gap-1.5">
+                {(() => {
+                  let workingIndex = 0;
+                  return last.map((s) => {
+                    if (!s.isWarmup) workingIndex++;
+                    return (
+                      <span
+                        key={s.id}
+                        className="rounded-lg bg-[var(--color-surface-2)] px-2.5 py-1 text-xs font-medium tabular-nums"
+                      >
+                        {s.isWarmup ? <span className="text-[var(--color-amber)]">W</span> : workingIndex}. {formatWeight(s.weight, s.unit)} × {s.reps}
+                        {s.rpe != null && (
+                          <span className="ml-1 font-normal text-[var(--color-text-faint)]">RPE {trimNum(s.rpe)}</span>
+                        )}
+                      </span>
+                    );
+                  });
+                })()}
               </div>
             </div>
-          </Collapse>
-
-          <button
-            onClick={onLogSet}
-            disabled={!draft.reps || (!draft.weight && ex.unit !== 'bodyweight')}
-            className="btn-glow-lime flex w-full items-center justify-center gap-1.5 rounded-xl py-2.5 active:scale-[0.98] disabled:opacity-40 disabled:shadow-none"
-          >
-            <Check size={17} strokeWidth={3} /> Log Set
-          </button>
+          )}
         </div>
       </Collapse>
     </div>

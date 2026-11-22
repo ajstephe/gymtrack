@@ -9,7 +9,6 @@ import { TabBar } from './components/TabBar';
 import { SideNav } from './components/SideNav';
 import { SplitPane } from './components/SplitPane';
 import { EmptyState } from './components/EmptyState';
-import { RestTimer } from './components/RestTimer';
 import { ConfirmDialog } from './components/ConfirmDialog';
 import { Toast } from './components/Toast';
 import { Spinner } from './components/Spinner';
@@ -153,7 +152,6 @@ function App() {
             </Suspense>
           </div>
         </main>
-        <RestTimer />
         <TabBar />
       </div>
       <ConfirmDialog />

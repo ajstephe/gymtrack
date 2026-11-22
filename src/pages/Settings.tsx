@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { ShieldCheck, ShieldAlert, Download, Upload, BellRing, BellOff } from 'lucide-react';
+import { ShieldCheck, ShieldAlert, Download, Upload } from 'lucide-react';
 import { db } from '../data/db';
 import { isStoragePersisted, requestPersistentStorage } from '../lib/storagePersistence';
 import { buildBackup, downloadBackup, isValidBackup, restoreBackup } from '../lib/backup';
-import { notificationStatus, requestNotificationPermission, type NotificationStatus } from '../lib/notifications';
 import { confirmDialog } from '../store/dialogStore';
 import { showToast } from '../store/toastStore';
 import { ThemeSwitcher } from '../components/ThemeSwitcher';
@@ -13,7 +12,6 @@ export function Settings() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [persisted, setPersisted] = useState<boolean | null>(null);
   const [busy, setBusy] = useState<'export' | 'import' | null>(null);
-  const [notifStatus, setNotifStatus] = useState<NotificationStatus>(() => notificationStatus());
   const profile = useLiveQuery(() => db.profile.get('profile'), []);
   const [ageDraft, setAgeDraft] = useState('');
   const [ageInitialized, setAgeInitialized] = useState(false);
@@ -41,11 +39,6 @@ export function Settings() {
   async function handleRequestPersist() {
     const granted = await requestPersistentStorage();
     setPersisted(granted);
-  }
-
-  async function handleEnableNotifications() {
-    const status = await requestNotificationPermission();
-    setNotifStatus(status);
   }
 
   async function handleExport() {
@@ -142,34 +135,6 @@ export function Settings() {
             className="w-full rounded-lg border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] py-2 text-sm font-medium transition active:scale-95"
           >
             Enable protection
-          </button>
-        )}
-      </div>
-
-      <div className="mb-4 rounded-2xl border-2 border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-        <h2 className="mb-2 text-sm font-semibold text-[var(--color-text-dim)]">Rest Timer Alerts</h2>
-        <div className="mb-3 flex items-center gap-2.5">
-          {notifStatus === 'granted' ? (
-            <BellRing size={18} className="shrink-0 text-[var(--color-lime)]" />
-          ) : (
-            <BellOff size={18} className="shrink-0 text-[var(--color-amber)]" />
-          )}
-          <p className="text-sm text-[var(--color-text-dim)]">
-            {notifStatus === 'unsupported'
-              ? "This browser doesn't support notifications."
-              : notifStatus === 'granted'
-                ? "You'll get a notification when a rest timer finishes, even if you've switched apps."
-                : notifStatus === 'denied'
-                  ? 'Blocked — re-enable notifications for this site in your browser settings.'
-                  : "Turn on alerts so you don't miss your rest timer if you switch apps. Won't fire if the screen is off."}
-          </p>
-        </div>
-        {notifStatus === 'default' && (
-          <button
-            onClick={handleEnableNotifications}
-            className="w-full rounded-lg border-2 border-[var(--color-border)] bg-[var(--color-surface-2)] py-2 text-sm font-medium transition active:scale-95"
-          >
-            Enable alerts
           </button>
         )}
       </div>
